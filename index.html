@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEA-5 Bid Evaluation Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .label-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .label {
+            display: block;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .input, .select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            transition: border-color 0.2s;
+        }
+        .input:focus, .select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        .output-value {
+            font-weight: 600;
+            color: #1f2937;
+            background-color: #f3f4f6;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .disqualified {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .qualified {
+            color: #16a34a;
+            font-weight: 700;
+        }
+        /* Tooltip styles */
+        .info-icon {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 320px;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: left;
+            font-weight: normal;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 6px;
+            padding: 12px 16px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -160px; /* Use half of the width to center */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .info-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .legend-table th, .legend-table td {
+            padding: 0.5rem 1rem;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        .legend-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Interactive GEA-5 Bid Evaluation Simulator</h1>
+            <p class="text-lg text-gray-600 mt-2">For Offshore Wind (OSW) Technology</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input Section -->
+            <div class="lg:col-span-2">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Bidder's Input Data</h2>
+                
+                <!-- Price Offer Card -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">1. Price Offer</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="label-container">
+                                <label for="foundationType" class="label">Foundation Type</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Select the foundation type for the project. This determines the benchmark GEAR Price.</span>
+                                </div>
+                            </div>
+                            <select id="foundationType" class="select">
+                                <option value="Monopile" selected>Monopile</option>
+                                <option value="Jacket">Jacket</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Benchmark GEAR Price</label>
+                            <div id="gearPrice" class="output-value">₱12.00</div>
+                        </div>
+                        <div>
+                             <div class="label-container">
+                                <label for="offeredPrice" class="label">Bidder's Offered Price (PHP)</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Enter your bid's offered price. If this exceeds the benchmark GEAR Price, the bid is disqualified.</span>
+                                </div>
+                            </div>
+                            <input type="number" id="offeredPrice" class="input" value="11.50" step="0.01">
+                        </div>
+                        <div>
+                            <div class="label-container">
+                                <label for="highestGearRatio" class="label">Highest Gear Ratio (All Bids)</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">
+                                        Enter the highest Gear Ratio among all competing valid bids. This is used to normalize your price score.
+                                        <br><br>
+                                        <strong>Sample Calculation:</strong><br>
+                                        - Benchmark GEAR Price (Monopile): ₱12.00<br>
+                                        - Bidder's Offered Price: ₱11.50<br>
+                                        <br>
+                                        <em>GEAR Ratio = ₱12.00 / ₱11.50 ≈ 1.043</em>
+                                        <br><br>
+                                        This ratio is then compared to the highest ratio from all bids to determine the final score.
+                                    </span>
+                                </div>
+                            </div>
+                            <input type="number" id="highestGearRatio" class="input" value="1.08" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DCD Card -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">2. Delivery Commencement Date (DCD)</h3>
+                    <div>
+                        <div class="label-container">
+                            <label for="dcd" class="label">Proposed DCD</label>
+                             <div class="info-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                <span class="tooltip">Select the proposed DCD. The score is based on how early this date is. Dates outside the 2028-2030 Delivery Commencement Period are disqualified.</span>
+                            </div>
+                        </div>
+                        <input type="date" id="dcd" class="input" value="2028-05-15">
+                    </div>
+                </div>
+
+                <!-- Grid Readiness Card -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">3. Grid Readiness</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="label-container">
+                                <label for="gridReadinessLevel" class="label">Level of Grid Readiness</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Select the current level of grid readiness. Level 0 results in disqualification.</span>
+                                </div>
+                            </div>
+                            <select id="gridReadinessLevel" class="select">
+                                <option value="3">Level 3: With SIS + FS + Connection Agreement</option>
+                                <option value="2" selected>Level 2: With SIS + FS</option>
+                                <option value="1">Level 1: With SIS only</option>
+                                <option value="0">Level 0: No SIS or grid available post-2030</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="label-container">
+                                <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Select the date the grid facility is expected to be ready. A penalty is applied if your DCD is earlier than this date.</span>
+                                </div>
+                            </div>
+                            <input type="date" id="gridFacilityReadinessDate" class="input" value="2028-08-01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offer Capacity Card -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">4. Offer Capacity</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="label-container">
+                                <label for="offeredCapacity" class="label">Bidder's Offered Capacity (MW)</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Enter your project's proposed capacity in Megawatts (MW).</span>
+                                </div>
+                            </div>
+                            <input type="number" id="offeredCapacity" class="input" value="850">
+                        </div>
+                        <div>
+                            <div class="label-container">
+                                <label for="maxOfferedCapacity" class="label">Max Offered Capacity (All Bids, MW)</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Enter the maximum capacity offered among all competing bids. Your score is scaled relative to this value.</span>
+                                </div>
+                            </div>
+                            <input type="number" id="maxOfferedCapacity" class="input" value="1000">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- OSW Infrastructure Card -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">5. OSW Infrastructure</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="label-container">
+                                <label for="portType" class="label">Port Utilization Type</label>
+                                <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">Per the TOR, this choice affects the final award. PPA ports have a queuing order based on bid score. Private ports require independent arrangements.</span>
+                                </div>
+                            </div>
+                            <select id="portType" class="select">
+                                <option value="PPA" selected>PPA-Administered Port</option>
+                                <option value="Private">Private Port</option>
+                            </select>
+                        </div>
+                         <div>
+                            <label class="label">Implication</label>
+                            <div id="portImplication" class="output-value text-sm text-left p-3">Eligible for PPA port queuing based on score.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Output Section -->
+            <div class="lg:col-span-1">
+                <div class="sticky top-8">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Evaluation Results</h2>
+                    <div class="card">
+                        <div class="space-y-4">
+                            <!-- Total Score -->
+                            <div class="text-center">
+                                <p class="text-lg text-gray-600">Total Weighted Score</p>
+                                <p id="totalScore" class="text-5xl font-bold text-blue-600">0.00</p>
+                                <p id="finalStatus" class="text-2xl font-bold mt-2 qualified">Qualified</p>
+                                <p id="disqualificationReason" class="text-sm text-red-600 mt-1 h-4"></p>
+                            </div>
+                            
+                            <hr class="my-4">
+
+                            <!-- Auction Context -->
+                             <h4 class="text-lg font-semibold text-center text-gray-700">Auction Context</h4>
+                             <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <span class="font-medium">Installation Target (2028-2030):</span>
+                                <span class="font-bold text-blue-600">3,300 MW</span>
+                             </div>
+
+                            <hr class="my-4">
+
+                            <!-- Score Breakdown -->
+                            <h4 class="text-lg font-semibold text-center text-gray-700">Score Breakdown</h4>
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-2">Criterion</th>
+                                        <th class="py-2 text-center">Raw Score</th>
+                                        <th class="py-2 text-center">Weight</th>
+                                        <th class="py-2 text-center">Final Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-2 font-medium">Price Offer</td>
+                                        <td id="priceRawScore" class="py-2 text-center">0.00</td>
+                                        <td class="py-2 text-center">70%</td>
+                                        <td id="priceFinalScore" class="py-2 text-center font-semibold">0.00</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="py-2 font-medium">DCD</td>
+                                        <td id="dcdRawScore" class="py-2 text-center">0.00</td>
+                                        <td class="py-2 text-center">10%</td>
+                                        <td id="dcdFinalScore" class="py-2 text-center font-semibold">0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 font-medium">Grid Readiness</td>
+                                        <td id="gridRawScore" class="py-2 text-center">0.00</td>
+                                        <td class="py-2 text-center">10%</td>
+                                        <td id="gridFinalScore" class="py-2 text-center font-semibold">0.00</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="py-2 font-medium">Offer Capacity</td>
+                                        <td id="capacityRawScore" class="py-2 text-center">0.00</td>
+                                        <td class="py-2 text-center">10%</td>
+                                        <td id="capacityFinalScore" class="py-2 text-center font-semibold">0.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- Discussion of Scores -->
+                            <h4 class="text-lg font-semibold text-center text-gray-700">Discussion of Scores</h4>
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-2 w-1/4">Criterion</th>
+                                        <th class="py-2">Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="align-top">
+                                        <td class="py-2 font-medium">Price Offer</td>
+                                        <td id="priceDiscussion" class="py-2 text-gray-600"></td>
+                                    </tr>
+                                    <tr class="bg-gray-50 align-top">
+                                        <td class="py-2 font-medium">DCD</td>
+                                        <td id="dcdDiscussion" class="py-2 text-gray-600"></td>
+                                    </tr>
+                                    <tr class="align-top">
+                                        <td class="py-2 font-medium">Grid Readiness</td>
+                                        <td id="gridDiscussion" class="py-2 text-gray-600"></td>
+                                    </tr>
+                                    <tr class="bg-gray-50 align-top">
+                                        <td class="py-2 font-medium">Offer Capacity</td>
+                                        <td id="capacityDiscussion" class="py-2 text-gray-600"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legends Section -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Scoring Legends</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- DCD Scoring Table -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-center">DCD Scoring Table</h3>
+                    <table class="w-full legend-table">
+                        <thead>
+                            <tr>
+                                <th>Score</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>100</td><td>1-Jan-28</td><td>31-Mar-28</td></tr>
+                            <tr><td>95</td><td>1-Apr-28</td><td>30-Jun-28</td></tr>
+                            <tr><td>91</td><td>1-Jul-28</td><td>30-Sep-28</td></tr>
+                            <tr><td>86</td><td>1-Oct-28</td><td>31-Dec-28</td></tr>
+                            <tr><td>82</td><td>1-Jan-29</td><td>31-Mar-29</td></tr>
+                            <tr><td>77</td><td>1-Apr-29</td><td>30-Jun-29</td></tr>
+                            <tr><td>73</td><td>1-Jul-29</td><td>30-Sep-29</td></tr>
+                            <tr><td>68</td><td>1-Oct-29</td><td>31-Dec-29</td></tr>
+                            <tr><td>64</td><td>1-Jan-30</td><td>31-Mar-30</td></tr>
+                            <tr><td>59</td><td>1-Apr-30</td><td>30-Jun-30</td></tr>
+                            <tr><td>55</td><td>1-Jul-30</td><td>30-Sep-30</td></tr>
+                            <tr><td>50</td><td>1-Oct-30</td><td>31-Dec-30</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Grid Readiness & Penalty -->
+                <div class="space-y-8">
+                    <div class="card">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Grid Score</h3>
+                         <table class="w-full legend-table">
+                            <thead>
+                                <tr>
+                                    <th>Score</th>
+                                    <th>Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>100</td><td>3</td></tr>
+                                <tr><td>75</td><td>2</td></tr>
+                                <tr><td>50</td><td>1</td></tr>
+                                <tr><td>Disqualified</td><td>0</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-4 text-sm text-gray-600 space-y-1 text-left">
+                            <p><strong>Level 3</strong> = With SIS + FS + Connection Agreement</p>
+                            <p><strong>Level 2</strong> = With SIS + FS</p>
+                            <p><strong>Level 1</strong> = With SIS only</p>
+                            <p><strong>Level 0</strong> = No SIS or grid available only post-2030</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Score Decrement of Advance DCD vs Grid Readiness</h3>
+                        <table class="w-full legend-table">
+                             <thead>
+                                <tr>
+                                    <th>No. of Days</th>
+                                    <th>% of Penalty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>0</td><td>0.00%</td></tr>
+                                <tr><td>30</td><td>3.00%</td></tr>
+                                <tr><td>60</td><td>6.00%</td></tr>
+                                <tr><td>90</td><td>9.00%</td></tr>
+                                <tr><td>120</td><td>12.00%</td></tr>
+                                <tr><td>150</td><td>15.00%</td></tr>
+                                <tr><td>180</td><td>18.00%</td></tr>
+                                <tr><td>...</td><td>...</td></tr>
+                                <tr><td>750</td><td>75.00%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA and PARAMETERS from PDF ---
+        const GEAR_PRICES = {
+            Monopile: 12.00,
+            Jacket: 12.10
+        };
+
+        const WEIGHTS = {
+            price: 0.70,
+            dcd: 0.10,
+            grid: 0.10,
+            capacity: 0.10
+        };
+
+        const DCD_SCORING_TABLE = [
+            { score: 100, start: '2028-01-01', end: '2028-03-31' },
+            { score: 95, start: '2028-04-01', end: '2028-06-30' },
+            { score: 91, start: '2028-07-01', end: '2028-09-30' },
+            { score: 86, start: '2028-10-01', end: '2028-12-31' },
+            { score: 82, start: '2029-01-01', end: '2029-03-31' },
+            { score: 77, start: '2029-04-01', end: '2029-06-30' },
+            { score: 73, start: '2029-07-01', end: '2029-09-30' },
+            { score: 68, start: '2029-10-01', end: '2029-12-31' },
+            { score: 64, start: '2030-01-01', end: '2030-03-31' },
+            { score: 59, start: '2030-04-01', end: '2030-06-30' },
+            { score: 55, start: '2030-07-01', end: '2030-09-30' },
+            { score: 50, start: '2030-10-01', end: '2030-12-31' }
+        ];
+
+        const GRID_SCORE_TABLE = { 3: 100, 2: 75, 1: 50, 0: 'Disqualified' };
+
+        const PENALTY_TABLE = [
+            { days: 750, penalty: 0.75 }, { days: 720, penalty: 0.72 },
+            { days: 690, penalty: 0.69 }, { days: 660, penalty: 0.66 },
+            { days: 630, penalty: 0.63 }, { days: 600, penalty: 0.60 },
+            { days: 570, penalty: 0.57 }, { days: 540, penalty: 0.54 },
+            { days: 510, penalty: 0.51 }, { days: 480, penalty: 0.48 },
+            { days: 450, penalty: 0.45 }, { days: 420, penalty: 0.42 },
+            { days: 390, penalty: 0.39 }, { days: 360, penalty: 0.36 },
+            { days: 330, penalty: 0.33 }, { days: 300, penalty: 0.30 },
+            { days: 270, penalty: 0.27 }, { days: 240, penalty: 0.24 },
+            { days: 210, penalty: 0.21 }, { days: 180, penalty: 0.18 },
+            { days: 150, penalty: 0.15 }, { days: 120, penalty: 0.12 },
+            { days: 90, penalty: 0.09 }, { days: 60, penalty: 0.06 },
+            { days: 30, penalty: 0.03 }, { days: 0, penalty: 0.00 }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const inputs = {
+            foundationType: document.getElementById('foundationType'),
+            offeredPrice: document.getElementById('offeredPrice'),
+            highestGearRatio: document.getElementById('highestGearRatio'),
+            dcd: document.getElementById('dcd'),
+            gridReadinessLevel: document.getElementById('gridReadinessLevel'),
+            gridFacilityReadinessDate: document.getElementById('gridFacilityReadinessDate'),
+            offeredCapacity: document.getElementById('offeredCapacity'),
+            maxOfferedCapacity: document.getElementById('maxOfferedCapacity'),
+            portType: document.getElementById('portType')
+        };
+
+        const outputs = {
+            gearPrice: document.getElementById('gearPrice'),
+            priceRawScore: document.getElementById('priceRawScore'),
+            priceFinalScore: document.getElementById('priceFinalScore'),
+            dcdRawScore: document.getElementById('dcdRawScore'),
+            dcdFinalScore: document.getElementById('dcdFinalScore'),
+            gridRawScore: document.getElementById('gridRawScore'),
+            gridFinalScore: document.getElementById('gridFinalScore'),
+            capacityRawScore: document.getElementById('capacityRawScore'),
+            capacityFinalScore: document.getElementById('capacityFinalScore'),
+            totalScore: document.getElementById('totalScore'),
+            finalStatus: document.getElementById('finalStatus'),
+            disqualificationReason: document.getElementById('disqualificationReason'),
+            portImplication: document.getElementById('portImplication'),
+            priceDiscussion: document.getElementById('priceDiscussion'),
+            dcdDiscussion: document.getElementById('dcdDiscussion'),
+            gridDiscussion: document.getElementById('gridDiscussion'),
+            capacityDiscussion: document.getElementById('capacityDiscussion')
+        };
+
+        // --- CALCULATION LOGIC ---
+        function calculateScores() {
+            let totalScore = 0;
+            let isDisqualified = false;
+            let disqualificationReason = '';
+
+            // 1. Price Offer Calculation
+            const foundationType = inputs.foundationType.value;
+            const gearPrice = GEAR_PRICES[foundationType];
+            const offeredPrice = parseFloat(inputs.offeredPrice.value);
+            const highestGearRatio = parseFloat(inputs.highestGearRatio.value);
+            let priceRawScore = 0;
+            let priceDiscussionText = '';
+            
+            if (offeredPrice > gearPrice) {
+                isDisqualified = true;
+                disqualificationReason = 'Price Offer exceeds Benchmark GEAR Price.';
+                priceRawScore = 0;
+                priceDiscussionText = `The offered price of ₱${offeredPrice.toFixed(2)} exceeds the benchmark of ₱${gearPrice.toFixed(2)}, resulting in disqualification.`;
+            } else if (offeredPrice > 0 && highestGearRatio > 0) {
+                const gearRatio = gearPrice / offeredPrice;
+                const normalizedRatio = gearRatio / highestGearRatio;
+                priceRawScore = 50 + (normalizedRatio * (100 - 50));
+                priceRawScore = Math.min(100, Math.max(0, priceRawScore)); // Clamp
+                priceDiscussionText = `Your GEAR Ratio (${gearRatio.toFixed(3)}) is normalized against the highest ratio (${highestGearRatio.toFixed(3)}), resulting in a raw score of ${priceRawScore.toFixed(2)}.`;
+            }
+            const priceFinalScore = priceRawScore * WEIGHTS.price;
+            if (!isDisqualified) totalScore += priceFinalScore;
+
+            // 2. DCD Calculation
+            const dcdDate = new Date(inputs.dcd.value);
+            let dcdRawScore = 0;
+            let dcdDiscussionText = '';
+            const dcdScoreEntry = DCD_SCORING_TABLE.find(entry => {
+                const start = new Date(entry.start);
+                const end = new Date(entry.end);
+                return dcdDate >= start && dcdDate <= end;
+            });
+
+            if (dcdScoreEntry) {
+                dcdRawScore = dcdScoreEntry.score;
+                dcdDiscussionText = `The proposed DCD falls within the ${dcdScoreEntry.start} to ${dcdScoreEntry.end} range, earning a raw score of ${dcdRawScore}.`;
+            } else {
+                if (!isDisqualified) {
+                    isDisqualified = true;
+                    disqualificationReason = 'DCD is outside the allowed scoring range.';
+                }
+                dcdRawScore = 0;
+                dcdDiscussionText = 'The DCD is outside the scorable date ranges, resulting in disqualification.';
+            }
+            const dcdFinalScore = dcdRawScore * WEIGHTS.dcd;
+            if (!isDisqualified) totalScore += dcdFinalScore;
+
+            // 3. Grid Readiness Calculation
+            const gridLevel = parseInt(inputs.gridReadinessLevel.value);
+            let gridBaseScore = GRID_SCORE_TABLE[gridLevel];
+            let gridRawScore = 0;
+            let gridDiscussionText = '';
+
+            if (gridBaseScore === 'Disqualified') {
+                 if (!isDisqualified) {
+                    isDisqualified = true;
+                    disqualificationReason = 'Grid Readiness Level is 0.';
+                }
+                gridRawScore = 0;
+                gridDiscussionText = 'Grid Readiness Level 0 results in disqualification.';
+            } else {
+                const gridDate = new Date(inputs.gridFacilityReadinessDate.value);
+                const advanceDays = Math.max(0, Math.ceil((gridDate - dcdDate) / (1000 * 60 * 60 * 24) * -1));
+                
+                let penaltyPercent = 0;
+                const penaltyEntry = PENALTY_TABLE.find(p => advanceDays >= p.days);
+                if (penaltyEntry) {
+                    penaltyPercent = penaltyEntry.penalty;
+                }
+                
+                const maxPenaltyPercentage = 0.75;
+                const finalPenaltyMultiplier = penaltyPercent * maxPenaltyPercentage;
+                
+                gridRawScore = gridBaseScore * (1 - finalPenaltyMultiplier);
+                gridDiscussionText = `A base score of ${gridBaseScore} is given for Level ${gridLevel}. `;
+                if (advanceDays > 0) {
+                    gridDiscussionText += `A penalty of ${(finalPenaltyMultiplier * 100).toFixed(2)}% is applied because the DCD is ${advanceDays} days earlier than the grid readiness date.`;
+                } else {
+                    gridDiscussionText += `No penalty is applied.`;
+                }
+            }
+            const gridFinalScore = gridRawScore * WEIGHTS.grid;
+            if (!isDisqualified) totalScore += gridFinalScore;
+            
+            // 4. Offer Capacity Calculation
+            const offeredCapacity = parseFloat(inputs.offeredCapacity.value);
+            const maxOfferedCapacity = parseFloat(inputs.maxOfferedCapacity.value);
+            let capacityRawScore = 0;
+            let capacityDiscussionText = '';
+            if (maxOfferedCapacity > 0) {
+                capacityRawScore = (offeredCapacity / maxOfferedCapacity) * 100;
+                capacityDiscussionText = `The offered capacity of ${offeredCapacity} MW is ${capacityRawScore.toFixed(2)}% of the maximum offered capacity (${maxOfferedCapacity} MW), resulting in a raw score of ${capacityRawScore.toFixed(2)}.`;
+            } else {
+                 capacityDiscussionText = `Max offered capacity must be greater than zero.`;
+            }
+            const capacityFinalScore = capacityRawScore * WEIGHTS.capacity;
+            if (!isDisqualified) totalScore += capacityFinalScore;
+
+            // 5. OSW Infrastructure (Informational)
+            const portType = inputs.portType.value;
+            if (portType === 'PPA') {
+                outputs.portImplication.textContent = 'Eligible for PPA port queuing based on score.';
+            } else {
+                outputs.portImplication.textContent = 'Requires independent arrangements with a private port.';
+            }
+
+            // --- UPDATE UI ---
+            outputs.gearPrice.textContent = `₱${gearPrice.toFixed(2)}`;
+            
+            outputs.priceRawScore.textContent = isDisqualified && disqualificationReason.startsWith('Price') ? 'DQ' : priceRawScore.toFixed(2);
+            outputs.priceFinalScore.textContent = isDisqualified ? '0.00' : priceFinalScore.toFixed(2);
+
+            outputs.dcdRawScore.textContent = isDisqualified && disqualificationReason.startsWith('DCD') ? 'DQ' : dcdRawScore.toFixed(2);
+            outputs.dcdFinalScore.textContent = isDisqualified ? '0.00' : dcdFinalScore.toFixed(2);
+
+            outputs.gridRawScore.textContent = isDisqualified && disqualificationReason.startsWith('Grid') ? 'DQ' : gridRawScore.toFixed(2);
+            outputs.gridFinalScore.textContent = isDisqualified ? '0.00' : gridFinalScore.toFixed(2);
+
+            outputs.capacityRawScore.textContent = isDisqualified ? 'N/A' : capacityRawScore.toFixed(2);
+            outputs.capacityFinalScore.textContent = isDisqualified ? '0.00' : capacityFinalScore.toFixed(2);
+
+            outputs.totalScore.textContent = isDisqualified ? '0.00' : totalScore.toFixed(2);
+            outputs.disqualificationReason.textContent = isDisqualified ? disqualificationReason : '';
+            
+            outputs.priceDiscussion.textContent = isDisqualified ? 'N/A' : priceDiscussionText;
+            outputs.dcdDiscussion.textContent = isDisqualified ? 'N/A' : dcdDiscussionText;
+            outputs.gridDiscussion.textContent = isDisqualified ? 'N/A' : gridDiscussionText;
+            outputs.capacityDiscussion.textContent = isDisqualified ? 'N/A' : capacityDiscussionText;
+
+
+            if (isDisqualified) {
+                outputs.finalStatus.textContent = 'Disqualified';
+                outputs.finalStatus.classList.remove('qualified');
+                outputs.finalStatus.classList.add('disqualified');
+                outputs.priceDiscussion.textContent = priceDiscussionText;
+                if(disqualificationReason.startsWith('DCD')) outputs.dcdDiscussion.textContent = dcdDiscussionText;
+                if(disqualificationReason.startsWith('Grid')) outputs.gridDiscussion.textContent = gridDiscussionText;
+            } else {
+                outputs.finalStatus.textContent = 'Qualified';
+                outputs.finalStatus.classList.remove('disqualified');
+                outputs.finalStatus.classList.add('qualified');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', calculateScores);
+        });
+
+        // Initial calculation on page load
+        window.addEventListener('load', calculateScores);
+    </script>
+</body>
+</html>
