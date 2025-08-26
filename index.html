@@ -91,6 +91,9 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
+        .tooltip strong {
+            color: #93c5fd;
+        }
         .tooltip::after {
             content: "";
             position: absolute;
@@ -138,7 +141,7 @@
                                 <label for="foundationType" class="label">Foundation Type</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the foundation type for the project. This determines the benchmark GEAR Price.</span>
+                                    <span class="tooltip">Select the foundation type for the project. This determines the benchmark GEAR Price. <br><br><strong>Reference:</strong> Annex I, Page 1, "Type of Foundation" table.</span>
                                 </div>
                             </div>
                             <select id="foundationType" class="select">
@@ -147,7 +150,13 @@
                             </select>
                         </div>
                         <div>
-                            <label class="label">Benchmark GEAR Price</label>
+                            <div class="label-container">
+                                <label class="label">Benchmark GEAR Price</label>
+                                 <div class="info-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                    <span class="tooltip">The benchmark price reflects the expected cost for a given foundation type. <br><br><strong>Reference:</strong> Annex I, Page 1, "Price Offer" Description.</span>
+                                </div>
+                            </div>
                             <div id="gearPrice" class="output-value">₱12.00</div>
                         </div>
                         <div>
@@ -155,7 +164,7 @@
                                 <label for="offeredPrice" class="label">Bidder's Offered Price (PHP)</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter your bid's offered price. If this exceeds the benchmark GEAR Price, the bid is disqualified.</span>
+                                    <span class="tooltip">Enter your bid's offered price. If this exceeds the benchmark GEAR Price, the bid is disqualified. <br><br><strong>Reference:</strong> Annex I, Page 1, "Price Offer" Disqualification Clause.</span>
                                 </div>
                             </div>
                             <input type="number" id="offeredPrice" class="input" value="11.50" step="0.01">
@@ -171,10 +180,9 @@
                                         <strong>Sample Calculation:</strong><br>
                                         - Benchmark GEAR Price (Monopile): ₱12.00<br>
                                         - Bidder's Offered Price: ₱11.50<br>
-                                        <br>
                                         <em>GEAR Ratio = ₱12.00 / ₱11.50 ≈ 1.043</em>
                                         <br><br>
-                                        This ratio is then compared to the highest ratio from all bids to determine the final score.
+                                        <strong>Reference:</strong> Annex I, Page 1, "Price Offer" Description.
                                     </span>
                                 </div>
                             </div>
@@ -191,7 +199,7 @@
                             <label for="dcd" class="label">Proposed DCD</label>
                              <div class="info-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                <span class="tooltip">Select the proposed DCD. The score is based on how early this date is. Dates outside the 2028-2030 Delivery Commencement Period are disqualified.</span>
+                                <span class="tooltip">Select the proposed DCD. The score is based on how early this date is. Dates outside the 2028-2030 Delivery Commencement Period are disqualified. <br><br><strong>Reference:</strong> Annex I, Page 1, "Delivery Commencement Date (DCD)" Description.</span>
                             </div>
                         </div>
                         <input type="date" id="dcd" class="input" value="2028-05-15">
@@ -207,7 +215,7 @@
                                 <label for="gridReadinessLevel" class="label">Level of Grid Readiness</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the current level of grid readiness. Level 0 results in disqualification.</span>
+                                    <span class="tooltip">Select the current level of grid readiness. Level 0 results in disqualification. <br><br><strong>Reference:</strong> Annex I, Page 3, "GRID SCORE" table.</span>
                                 </div>
                             </div>
                             <select id="gridReadinessLevel" class="select">
@@ -222,7 +230,7 @@
                                 <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the date the grid facility is expected to be ready. A penalty is applied if your DCD is earlier than this date.</span>
+                                    <span class="tooltip">Select the date the grid facility is expected to be ready. A penalty is applied if your DCD is earlier than this date. <br><br><strong>Reference:</strong> Annex I, Page 1, "Grid Readiness" Description.</span>
                                 </div>
                             </div>
                             <input type="date" id="gridFacilityReadinessDate" class="input" value="2028-08-01">
@@ -239,7 +247,7 @@
                                 <label for="offeredCapacity" class="label">Bidder's Offered Capacity (MW)</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter your project's proposed capacity in Megawatts (MW).</span>
+                                    <span class="tooltip">Enter your project's proposed capacity in Megawatts (MW). <br><br><strong>Reference:</strong> Annex I, Page 1, "Offer Capacity" Description.</span>
                                 </div>
                             </div>
                             <input type="number" id="offeredCapacity" class="input" value="850">
@@ -249,7 +257,7 @@
                                 <label for="maxOfferedCapacity" class="label">Max Offered Capacity (All Bids, MW)</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter the maximum capacity offered among all competing bids. Your score is scaled relative to this value.</span>
+                                    <span class="tooltip">Enter the maximum capacity offered among all competing bids. Your score is scaled relative to this value. <br><br><strong>Reference:</strong> Annex I, Page 1, "Offer Capacity" Description.</span>
                                 </div>
                             </div>
                             <input type="number" id="maxOfferedCapacity" class="input" value="1000">
@@ -266,7 +274,7 @@
                                 <label for="portType" class="label">Port Utilization Type</label>
                                 <div class="info-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Per the TOR, this choice affects the final award. PPA ports have a queuing order based on bid score. Private ports require independent arrangements.</span>
+                                    <span class="tooltip">Per the TOR, this choice affects the final award. PPA ports have a queuing order based on bid score. Private ports require independent arrangements. <br><br><strong>Reference:</strong> GEA-5 TOR, Sections 8.1.2 & 15.</span>
                                 </div>
                             </div>
                             <select id="portType" class="select">
@@ -291,7 +299,13 @@
                         <div class="space-y-4">
                             <!-- Total Score -->
                             <div class="text-center">
-                                <p class="text-lg text-gray-600">Total Weighted Score</p>
+                                <div class="label-container justify-center">
+                                    <p class="text-lg text-gray-600">Total Weighted Score</p>
+                                    <div class="info-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                        <span class="tooltip">This is the sum of the Final Scores of all criteria. Bids are ranked from highest to lowest score to meet the installation target. <br><br><strong>Reference:</strong> GEA-5 TOR, Section 7.4.1.</span>
+                                    </div>
+                                </div>
                                 <p id="totalScore" class="text-5xl font-bold text-blue-600">0.00</p>
                                 <p id="finalStatus" class="text-2xl font-bold mt-2 qualified">Qualified</p>
                                 <p id="disqualificationReason" class="text-sm text-red-600 mt-1 h-4"></p>
@@ -302,7 +316,13 @@
                             <!-- Auction Context -->
                              <h4 class="text-lg font-semibold text-center text-gray-700">Auction Context</h4>
                              <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                                <span class="font-medium">Installation Target (2028-2030):</span>
+                                <div class="label-container">
+                                    <span class="font-medium">Installation Target (2028-2030):</span>
+                                    <div class="info-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                        <span class="tooltip">The total capacity to be awarded for the 2028-2030 delivery period. <br><br><strong>Reference:</strong> GEA-5 TOR, Section 1.2 & GEA-5 NOA, Page 1.</span>
+                                    </div>
+                                </div>
                                 <span class="font-bold text-blue-600">3,300 MW</span>
                              </div>
 
