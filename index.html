@@ -109,6 +109,7 @@
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Interactive GEA-5 Bid Evaluation Simulator</h1>
             <p class="text-lg text-gray-600 mt-2">For Offshore Wind (OSW) Technology</p>
+            <p class="text-sm font-bold text-red-600 mt-2">Programmed by Engr. Franz Xyrlo I. Tobias, PEE</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -285,7 +286,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card">
+                <div class="card" id="gridLegendCard">
                     <h3 class="text-xl font-semibold mb-4 text-center">Grid Score & Legend</h3>
                     <table class="w-full legend-table">
                         <thead><tr><th>Score</th><th>Level</th></tr></thead>
@@ -330,6 +331,7 @@
             runMonteCarloBtn: document.getElementById('runMonteCarloBtn'), monteCarloResult: document.getElementById('monteCarloResult'),
             monteCarloDiscussion: document.getElementById('monteCarloDiscussion'),
             penaltyTableBody: document.getElementById('penaltyTableBody'), dcdScoringTableBody: document.getElementById('dcdScoringTableBody'),
+            gridLegendCard: document.getElementById('gridLegendCard'),
         };
         
         // --- CORE LOGIC ---
@@ -662,6 +664,8 @@
 
         // --- INIT ---
         const init = () => {
+            dom.gridLegendCard.style.display = 'none'; // Hide the separate grid legend card
+
             PRESET_BIDDERS.forEach(bidder => {
                 const option = document.createElement('option'); option.value = bidder.name; option.textContent = bidder.name; dom.bidderNameSelect.appendChild(option);
             });
@@ -684,4 +688,5 @@
     </script>
 </body>
 </html>
+
 
