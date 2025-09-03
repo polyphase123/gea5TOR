@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- LeafletJS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -42,6 +45,12 @@
         }
         .legend-table th, .legend-table td { padding: 0.5rem 1rem; text-align: center; border: 1px solid #e5e7eb; }
         .legend-table th { background-color: #f3f4f6; font-weight: 600; }
+
+        #map {
+            height: 400px;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
 
         /* Tooltip styles */
         .tooltip-container {
@@ -124,21 +133,26 @@
                             <span class="font-semibold">Total Installation Target:</span> 3,300 MW
                         </p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                         <div class="md:col-span-2">
                              <label for="bidderNameSelect" class="label text-sm">Bidder Name</label>
                              <select id="bidderNameSelect" class="input"></select>
                              <input type="text" id="otherBidderName" class="input mt-2" placeholder="Enter custom name" style="display: none;">
                         </div>
                         <div class="tooltip-container">
-                            <label for="competitorPriceMin" class="label text-sm">Min Price (PHP)<span class="tooltip-icon">?</span></label>
+                            <label for="competitorPriceMin" class="label text-sm">Min Price<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorPriceMin" class="input" value="11.50" step="0.01">
-                            <span class="tooltip-text">The lowest or most likely price this bidder is expected to offer. This is their primary bid price for the main ranking.</span>
+                            <span class="tooltip-text">The lowest or most likely price this bidder is expected to offer. Used for ranking and as the minimum for simulations.</span>
                         </div>
                          <div class="tooltip-container">
-                            <label for="competitorPriceMax" class="label text-sm">Max Price (PHP)<span class="tooltip-icon">?</span></label>
+                            <label for="competitorPriceMostLikely" class="label text-sm">Likely Price<span class="tooltip-icon">?</span></label>
+                            <input type="number" id="competitorPriceMostLikely" class="input" placeholder="Optional" step="0.01">
+                            <span class="tooltip-text">Optional. The most likely price for a bidder. Enables a more realistic 'Triangular' distribution in Monte Carlo analysis.</span>
+                        </div>
+                         <div class="tooltip-container">
+                            <label for="competitorPriceMax" class="label text-sm">Max Price<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorPriceMax" class="input" placeholder="Optional" step="0.01">
-                            <span class="tooltip-text">Optional. The highest price a bidder might offer. Used for Monte Carlo analysis to simulate a range of possible bid prices.</span>
+                            <span class="tooltip-text">Optional. The highest price a bidder might offer. Used for simulations.</span>
                         </div>
                          <div class="tooltip-container">
                             <label for="competitorCapacity" class="label text-sm">Capacity (MW)<span class="tooltip-icon">?</span></label>
@@ -146,7 +160,10 @@
                             <span class="tooltip-text">The total generation capacity this bidder is offering in Megawatts. This contributes to the Capacity Score.</span>
                         </div>
                     </div>
-                    <button id="addBidderBtn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="addBidderBtn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
+                        <button id="predictBidsBtn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Load Predicted Bids</button>
+                    </div>
                     <div id="addBidderError" class="text-red-600 text-sm mt-2"></div>
                     <div id="biddersListContainer" class="mt-4 space-y-3"></div>
                 </div>
@@ -264,9 +281,13 @@
 
         <!-- Legends Section -->
         <div class="mt-12">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Scoring Legends</h2>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Scoring Legends & Project Map</h2>
              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
+                     <div class="card">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Potential OSW Project Locations</h3>
+                         <div id="map"></div>
+                    </div>
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-center">DCD Scoring Table</h3>
                         <table class="w-full legend-table">
@@ -276,6 +297,8 @@
                             <tbody id="dcdScoringTableBody"></tbody>
                         </table>
                     </div>
+                </div>
+                <div>
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-center">Score Decrement of Advance DCD vs Grid Readiness</h3>
                         <div class="max-h-64 overflow-y-auto">
@@ -285,18 +308,18 @@
                             </table>
                         </div>
                     </div>
-                </div>
-                <div class="card" id="gridLegendCard">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Grid Score & Legend</h3>
-                    <table class="w-full legend-table">
-                        <thead><tr><th>Score</th><th>Level</th></tr></thead>
-                        <tbody>
-                            <tr><td>100</td><td>3</td></tr>
-                            <tr><td>75</td><td>2</td></tr>
-                            <tr><td>50</td><td>1</td></tr>
-                            <tr><td>Disqualified</td><td>0</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="card" id="gridLegendCard">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Grid Score & Legend</h3>
+                        <table class="w-full legend-table">
+                            <thead><tr><th>Score</th><th>Level</th></tr></thead>
+                            <tbody>
+                                <tr><td>100</td><td>3</td></tr>
+                                <tr><td>75</td><td>2</td></tr>
+                                <tr><td>50</td><td>1</td></tr>
+                                <tr><td>Disqualified</td><td>0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -308,16 +331,29 @@
         const DCD_SCORING_TABLE = [ { score: 100, start: '2028-01-01', end: '2028-03-31' }, { score: 95, start: '2028-04-01', end: '2028-06-30' }, { score: 91, start: '2028-07-01', end: '2028-09-30' }, { score: 86, start: '2028-10-01', end: '2028-12-31' }, { score: 82, start: '2029-01-01', end: '2029-03-31' }, { score: 77, start: '2029-04-01', end: '2029-06-30' }, { score: 73, start: '2029-07-01', end: '2029-09-30' }, { score: 68, start: '2029-10-01', end: '2029-12-31' }, { score: 64, start: '2030-01-01', end: '2030-03-31' }, { score: 59, start: '2030-04-01', end: '2030-06-30' }, { score: 55, start: '2030-07-01', end: '2030-09-30' }, { score: 50, start: '2030-10-01', end: '2030-12-31' } ];
         const GRID_SCORE_TABLE = { 3: 100, 2: 75, 1: 50, 0: 'Disqualified' };
         const PENALTY_TABLE = [ { days: 750, penalty: 0.75 }, { days: 720, penalty: 0.72 }, { days: 690, penalty: 0.69 }, { days: 660, penalty: 0.66 }, { days: 630, penalty: 0.63 }, { days: 600, penalty: 0.60 }, { days: 570, penalty: 0.57 }, { days: 540, penalty: 0.54 }, { days: 510, penalty: 0.51 }, { days: 480, penalty: 0.48 }, { days: 450, penalty: 0.45 }, { days: 420, penalty: 0.42 }, { days: 390, penalty: 0.39 }, { days: 360, penalty: 0.36 }, { days: 330, penalty: 0.33 }, { days: 300, penalty: 0.30 }, { days: 270, penalty: 0.27 }, { days: 240, penalty: 0.24 }, { days: 210, penalty: 0.21 }, { days: 180, penalty: 0.18 }, { days: 150, penalty: 0.15 }, { days: 120, penalty: 0.12 }, { days: 90, penalty: 0.09 }, { days: 60, penalty: 0.06 }, { days: 30, penalty: 0.03 }, { days: 0, penalty: 0.00 } ];
-        const PRESET_BIDDERS = [ { name: 'CIP & ACEN Corporation', capacity: 1000 }, { name: 'Triconti Windkraft Group', capacity: 450 }, { name: 'CleanTech & The Blue Circle', capacity: 1200 }, { name: 'Corio Generation', capacity: 3000 }, { name: 'BlueFloat Energy', capacity: 7000 }, { name: 'BuhaWind Consortium', capacity: 4000 }, { name: 'San Miguel Corporation', capacity: '' }, { name: 'Aboitiz Power Corp.', capacity: '' }, { name: 'The Lopez Group (First Gen)', capacity: '' }, ];
+        const PRESET_BIDDERS = [ 
+            { name: 'CIP & ACEN Corporation', capacity: 1000, location: [10.5, 122.7], info: "Guimaras Strait" }, 
+            { name: 'Triconti Windkraft Group', capacity: 450, location: [18.4, 121.6], info: "Aparri Bay" }, 
+            { name: 'CleanTech & The Blue Circle', capacity: 1200, location: [12.2, 121.4], info: "Bulalacao, Mindoro" }, 
+            { name: 'Corio Generation', capacity: 3000, location: [14.4, 120.6], info: "Offshore Cavite" }, 
+            { name: 'BlueFloat Energy', capacity: 7000, location: [14.8, 120.1], info: "Offshore Bataan" }, 
+            { name: 'BuhaWind Consortium', capacity: 4000, location: [18.5, 120.5], info: "Offshore Ilocos Norte" }, 
+            { name: 'San Miguel Corporation', capacity: '', location: [13.8, 120.8], info: "Offshore Batangas" }, 
+            { name: 'Aboitiz Power Corp.', capacity: '', location: [15.4, 119.8], info: "Offshore Zambales" }, 
+            { name: 'The Lopez Group (First Gen)', capacity: '', location: [11.2, 122.5], info: "Offshore Panay" }, 
+        ];
 
         // --- GLOBAL STATE ---
         let bidders = [];
+        let rankedBiddersCache = [];
         
         // --- DOM ELEMENTS ---
         const dom = {
             bidderNameSelect: document.getElementById('bidderNameSelect'), otherBidderName: document.getElementById('otherBidderName'),
             competitorPriceMin: document.getElementById('competitorPriceMin'), competitorPriceMax: document.getElementById('competitorPriceMax'),
+            competitorPriceMostLikely: document.getElementById('competitorPriceMostLikely'),
             competitorCapacity: document.getElementById('competitorCapacity'), addBidderBtn: document.getElementById('addBidderBtn'),
+            predictBidsBtn: document.getElementById('predictBidsBtn'),
             addBidderError: document.getElementById('addBidderError'), biddersListContainer: document.getElementById('biddersListContainer'),
             foundationType: document.getElementById('foundationType'), 
             monopileGearPrice: document.getElementById('monopileGearPrice'), jacketGearPrice: document.getElementById('jacketGearPrice'),
@@ -410,6 +446,7 @@
             validateInputs();
             const sharedDetails = { foundationType: dom.foundationType.value, dcd: dom.dcd.value, gridReadinessLevel: dom.gridReadinessLevel.value, gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value };
             const { rankedBidders, highestGearRatio } = runFullAuction(bidders.map(b => ({...b, price: b.priceMin})), sharedDetails);
+            rankedBiddersCache = rankedBidders;
             updateUI(rankedBidders, highestGearRatio);
         };
         
@@ -431,11 +468,18 @@
         const generateBidderHTML = (bidder, index) => {
              const isFirstBidder = bidders[0] && bidder.id === bidders[0].id;
              const bgColor = bidder.isDisqualified ? 'bg-red-50' : (isFirstBidder ? 'bg-blue-50' : 'bg-gray-50');
-             const priceText = bidder.priceMax ? `₱${bidder.priceMin.toFixed(2)} - ₱${bidder.priceMax.toFixed(2)}` : `₱${bidder.priceMin.toFixed(2)}`;
+             
+             let priceText = `₱${bidder.priceMin.toFixed(2)}`;
+             if(bidder.priceMostLikely && bidder.priceMax) {
+                priceText = `₱${bidder.priceMin.toFixed(2)} - <strong>${bidder.priceMostLikely.toFixed(2)}</strong> - ${bidder.priceMax.toFixed(2)}`
+             } else if (bidder.priceMax) {
+                priceText = `₱${bidder.priceMin.toFixed(2)} - ₱${bidder.priceMax.toFixed(2)}`;
+             }
+
              return `<div class="border rounded-lg p-3 ${bgColor}">
                     <div class="grid grid-cols-6 gap-2 items-center text-sm">
                         <div class="col-span-2 font-semibold text-gray-800">${index + 1}. ${bidder.name}</div>
-                        <div class="text-center"><span class="block text-xs text-gray-500">Price</span> ${priceText}</div>
+                        <div class="text-center text-xs"><span class="block text-gray-500">Price Range</span> ${priceText}</div>
                         <div class="text-center"><span class="block text-xs text-gray-500">Capacity</span> ${bidder.capacity} MW</div>
                         <div class="text-center font-bold text-blue-600"><span class="block text-xs text-gray-500 font-medium">Score</span> ${bidder.total.toFixed(2)}</div>
                         <div class="text-right"><button onclick="toggleDetails('${bidder.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-2 rounded">Details</button> <button onclick="removeBidder('${bidder.id}')" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">&times;</button></div>
@@ -482,7 +526,7 @@
                 const requiredDcdScoreImprovement = avgScoreGap / WEIGHTS.dcd;
                 const targetDcdScore = currentDcdScore + requiredDcdScoreImprovement;
                 const betterDcdEntry = DCD_SCORING_TABLE.find(e => e.score >= targetDcdScore);
-                const dcdSuggestion = betterDcdEntry ? `Alternatively, improving the DCD score to ~${Math.ceil(targetDcdScore)} (e.g., by setting a DCD in the period around <strong>${new Date(betterDcdEntry.start+'T00:00:00').toLocaleDateString()}</strong>) could close this gap.` : 'The required DCD improvement is too large to be feasible.';
+                const dcdSuggestion = betterDcdEntry ? `Improving the DCD score to ~${Math.ceil(targetDcdScore)} (e.g., by setting a DCD around <strong>${new Date(betterDcdEntry.start+'T00:00:00').toLocaleDateString()}</strong>) could close this gap.` : 'The required DCD improvement is too large to be feasible.';
 
                 // Grid Suggestion
                 const currentGridLevel = parseInt(sharedDetails.gridReadinessLevel);
@@ -504,21 +548,31 @@
                     const nextLevelGridRawScore = nextLevelGridBaseScore * (1 - (penaltyPercent * 0.75));
                     
                     if (targetGridScore <= nextLevelGridRawScore) {
-                        gridSuggestion = `Or, improving Grid Readiness to <strong>Level ${nextLevel}</strong> would likely be sufficient to become a winner.`;
+                        gridSuggestion = `Improving Grid Readiness to <strong>Level ${nextLevel}</strong> would likely be sufficient to become a winner.`;
                     } else {
                         gridSuggestion = `Improving Grid Readiness to <strong>Level ${nextLevel}</strong> would help but may not be enough on its own.`;
                     }
                 }
                 
                 suggestionHtml = `
-                    <div class="mt-3 pt-3 border-t border-gray-200">
-                        <h5 class="font-semibold text-gray-700">Improvement Suggestions:</h5>
-                        <p class="text-xs text-gray-500 mb-2">Based on losing scenarios, here are ways to bridge the average score gap of <strong>${avgScoreGap.toFixed(2)}</strong> points:</p>
-                        <ul class="list-disc list-inside space-y-2 text-sm">
-                            <li><strong>Price:</strong> On average, a price reduction of around <strong>₱${avgPriceDrop.toFixed(2)}</strong> was needed to secure a win.</li>
-                            <li><strong>DCD:</strong> ${dcdSuggestion}</li>
-                            ${gridSuggestion ? `<li><strong>Grid:</strong> ${gridSuggestion}</li>` : ''}
-                        </ul>
+                    <div class="mt-4 pt-3 border-t border-gray-300">
+                        <h5 class="font-bold text-gray-800">Actionable Strategies to Win</h5>
+                        <p class="text-xs text-gray-600 mb-2">In the simulations where this bid lost, the average score gap to the last winner was <strong>${avgScoreGap.toFixed(2)}</strong> points. Here are specific ways to close that gap:</p>
+                        <div class="space-y-3 mt-3">
+                            <div class="p-3 bg-white border border-gray-200 rounded-md">
+                                <p class="font-semibold text-blue-700">1. Adjust Bid Price</p>
+                                <p class="text-sm text-gray-700">A price reduction of approximately <strong class="text-lg">₱${avgPriceDrop.toFixed(2)}</strong> was the most common path to winning in the simulations. This is often the most direct lever to pull.</p>
+                            </div>
+                            <div class="p-3 bg-white border border-gray-200 rounded-md">
+                                <p class="font-semibold text-blue-700">2. Improve Project Timelines</p>
+                                <p class="text-sm text-gray-700">${dcdSuggestion}</p>
+                                ${gridSuggestion ? `<p class="text-sm text-gray-700 mt-2">${gridSuggestion}</p>` : ''}
+                            </div>
+                             <div class="p-3 bg-white border border-gray-200 rounded-md">
+                                <p class="font-semibold text-blue-700">3. Re-evaluate Capacity</p>
+                                <p class="text-sm text-gray-700">While increasing capacity can improve your score, it is generally less impactful than price or timelines due to the normalization against the largest bidder. Significant changes are needed to see a major score impact.</p>
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -532,24 +586,27 @@
         // --- EVENT HANDLERS & FEATURES ---
         const addBidder = () => {
             dom.addBidderError.textContent = '';
-            ['competitorPriceMin', 'competitorPriceMax'].forEach(id => dom[id].classList.remove('border-red-500'));
+            ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].classList.remove('border-red-500'));
 
             const selectedName = dom.bidderNameSelect.value;
             const name = selectedName === 'other' ? dom.otherBidderName.value.trim() : selectedName;
             const priceMin = parseFloat(dom.competitorPriceMin.value);
+            const priceMostLikely = dom.competitorPriceMostLikely.value ? parseFloat(dom.competitorPriceMostLikely.value) : null;
             const priceMax = dom.competitorPriceMax.value ? parseFloat(dom.competitorPriceMax.value) : null;
             const capacity = parseInt(dom.competitorCapacity.value);
             
-            if (priceMax !== null && priceMax < priceMin) {
-                dom.addBidderError.textContent = 'Max price cannot be lower than Min price.';
+            if ((priceMax !== null && priceMax < priceMin) || (priceMostLikely !== null && (priceMostLikely < priceMin || priceMostLikely > priceMax))) {
+                dom.addBidderError.textContent = 'Price range is invalid. Ensure Min <= Likely <= Max.';
                 dom.competitorPriceMin.classList.add('border-red-500');
+                dom.competitorPriceMostLikely.classList.add('border-red-500');
                 dom.competitorPriceMax.classList.add('border-red-500');
                 return;
             }
 
             if (name && !isNaN(priceMin) && !isNaN(capacity)) {
-                bidders.push({ id: `bid_${Date.now()}`, name, price: priceMin, priceMin, priceMax, capacity });
+                bidders.push({ id: `bid_${Date.now()}`, name, priceMin, priceMostLikely, priceMax, capacity });
                 dom.otherBidderName.value = '';
+                ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].value = '');
                 dom.bidderNameSelect.selectedIndex = 0;
                 handleBidderSelectChange();
                 calculateAndRender();
@@ -570,13 +627,90 @@
             }
         };
 
+        const predictBids = () => {
+            const predictedBidders = [
+                { name: 'CIP & ACEN Corporation', priceMin: 11.20, priceMostLikely: 11.40, priceMax: 11.60, capacity: 1000 },
+                { name: 'San Miguel Corporation', priceMin: 10.90, priceMostLikely: 11.10, priceMax: 11.30, capacity: 800 },
+                { name: 'Corio Generation', priceMin: 11.15, priceMostLikely: 11.35, priceMax: 11.55, capacity: 600 },
+                { name: 'Triconti Windkraft Group', priceMin: 11.25, priceMostLikely: 11.45, priceMax: 11.65, capacity: 450 },
+                { name: 'Aboitiz Power Corp.', priceMin: 11.30, priceMostLikely: 11.50, priceMax: 11.70, capacity: 500 },
+                { name: 'The Lopez Group (First Gen)', priceMin: 11.35, priceMostLikely: 11.55, priceMax: 11.75, capacity: 400 },
+                { name: 'CleanTech & The Blue Circle', priceMin: 11.40, priceMostLikely: 11.60, priceMax: 11.80, capacity: 1200 },
+                { name: 'BlueFloat Energy', priceMin: 11.45, priceMostLikely: 11.65, priceMax: 11.85, capacity: 750 }
+            ];
+
+            predictedBidders.forEach(pBid => {
+                // Avoid adding duplicates
+                if (!bidders.some(b => b.name === pBid.name)) {
+                    bidders.push({ ...pBid, id: `bid_${Date.now()}_${Math.random()}` });
+                }
+            });
+
+            calculateAndRender();
+        };
+
         window.removeBidder = (id) => { bidders = bidders.filter(b => b.id !== id); calculateAndRender(); };
-        window.toggleDetails = (id) => { document.getElementById(`details-${id}`).style.display = document.getElementById(`details-${id}`).style.display === 'block' ? 'none' : 'block'; };
+        window.toggleDetails = (id) => { 
+            const detailsEl = document.getElementById(`details-${id}`);
+            detailsEl.style.display = detailsEl.style.display === 'block' ? 'none' : 'block'; 
+        };
 
         // Export to CSV
-        const exportToCsv = () => { /* ... implementation ... */ };
+        const exportToCsv = () => {
+            if (rankedBiddersCache.length === 0) {
+                alert("No data to export. Please add bidders and run the simulation first.");
+                return;
+            }
+
+            const headers = [
+                "Rank", "Bidder", "Award Status", "Awarded MW", "Total Score",
+                "Price (Final)", "DCD (Final)", "Grid (Final)", "Capacity (Final)",
+                "Price (Raw)", "DCD (Raw)", "Grid (Raw)", "Capacity (Raw)",
+                "Bid Price (Min)", "Bid Capacity (MW)"
+            ];
+
+            const rows = rankedBiddersCache.map((bid, index) => [
+                index + 1,
+                `"${bid.name}"`, // Wrap in quotes to handle potential commas
+                bid.awardStatus,
+                bid.awardedMW,
+                bid.total.toFixed(4),
+                bid.priceFinal.toFixed(4),
+                bid.dcdFinal.toFixed(4),
+                bid.gridFinal.toFixed(4),
+                bid.capacityFinal.toFixed(4),
+                bid.priceRaw.toFixed(4),
+                bid.dcdRaw.toFixed(4),
+                bid.gridRaw.toFixed(4),
+                bid.capacityRaw.toFixed(4),
+                bid.priceMin.toFixed(2),
+                bid.capacity
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(",") + "\n" 
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "gea5_auction_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
         
-        // Monte Carlo Analysis
+        // --- Monte Carlo Analysis ---
+        function getTriangularRandom(min, max, mode) {
+            const F = (mode - min) / (max - min);
+            const rand = Math.random();
+            if (rand < F) {
+                return min + Math.sqrt(rand * (max - min) * (mode - min));
+            } else {
+                return max - Math.sqrt((1 - rand) * (max - min) * (max - mode));
+            }
+        }
+
         const runMonteCarloAnalysis = async () => {
             const bidderId = dom.monteCarloBidderSelect.value;
             const iterations = parseInt(dom.monteCarloIterations.value);
@@ -596,10 +730,18 @@
             for (let i = 0; i < iterations; i++) {
                 const simBidders = JSON.parse(JSON.stringify(bidders));
                 simBidders.forEach(bid => {
-                    if (bid.id !== bidderId && bid.priceMax && bid.priceMax > bid.priceMin) {
-                        bid.price = Math.random() * (bid.priceMax - bid.priceMin) + bid.priceMin;
+                    if (bid.id !== bidderId) {
+                        if (bid.priceMostLikely && bid.priceMax && bid.priceMax > bid.priceMin) {
+                            // Triangular distribution
+                             bid.price = getTriangularRandom(bid.priceMin, bid.priceMax, bid.priceMostLikely);
+                        } else if (bid.priceMax && bid.priceMax > bid.priceMin) {
+                           // Uniform distribution
+                            bid.price = Math.random() * (bid.priceMax - bid.priceMin) + bid.priceMin;
+                        } else {
+                            bid.price = bid.priceMin;
+                        }
                     } else {
-                        bid.price = bid.priceMin;
+                        bid.price = bid.priceMin; // Analyze target bidder at their min price
                     }
                 });
 
@@ -615,20 +757,16 @@
                         const scoreGap = lastWinnerScore - targetResult.total;
                         if (scoreGap > 0) {
                            scoreGaps.push(scoreGap);
-                           // Find the required price drop for this scenario
                            let testBidders = JSON.parse(JSON.stringify(simBidders));
                            let testBidder = testBidders.find(b => b.id === bidderId);
                            const originalPrice = testBidder.price;
                            let newPrice = originalPrice;
-
-                           for (let p = 0; p < 300; p++) { // Limit to 300 iterations (PHP 3.00 drop)
+                           for (let p = 0; p < 300; p++) {
                                newPrice -= 0.01;
                                if (newPrice <= 0) break;
                                testBidder.price = newPrice;
-                               
                                const { rankedBidders: testRanked } = runFullAuction(testBidders, sharedDetails);
                                const testTargetResult = testRanked.find(b => b.id === bidderId);
-
                                if (testTargetResult && (testTargetResult.awardStatus === 'Winner' || testTargetResult.awardStatus === 'Marginal')) {
                                    requiredPriceDrops.push(originalPrice - newPrice);
                                    break;
@@ -642,11 +780,7 @@
             dom.monteCarloResult.innerHTML = `Win Probability: <span class="text-teal-600">${winProbability.toFixed(2)}%</span>`;
             
             dom.monteCarloDiscussion.innerHTML = generateMonteCarloDiscussion(
-                bidderToAnalyze.name, 
-                winProbability,
-                requiredPriceDrops,
-                scoreGaps,
-                sharedDetails
+                bidderToAnalyze.name, winProbability, requiredPriceDrops, scoreGaps, sharedDetails
             );
         };
 
@@ -661,6 +795,22 @@
             });
              dom.monteCarloBidderSelect.value = currentMonteCarloId || (bidders[0] ? bidders[0].id : '');
         };
+        
+        // --- MAP INITIALIZATION ---
+        const initMap = () => {
+            const map = L.map('map').setView([12.8797, 121.7740], 6); // Centered on the Philippines
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            PRESET_BIDDERS.forEach(bidder => {
+                if(bidder.location) {
+                    L.marker(bidder.location).addTo(map)
+                        .bindPopup(`<b>${bidder.name}</b><br>${bidder.info}`);
+                }
+            });
+        };
 
         // --- INIT ---
         const init = () => {
@@ -673,8 +823,9 @@
 
             document.querySelectorAll('.input, .select').forEach(el => el.addEventListener('input', calculateAndRender));
             dom.addBidderBtn.addEventListener('click', addBidder);
+            dom.predictBidsBtn.addEventListener('click', predictBids);
             dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
-            dom.exportCsvBtn.addEventListener('click', () => alert("CSV Export functionality to be added."));
+            dom.exportCsvBtn.addEventListener('click', exportToCsv);
             dom.runMonteCarloBtn.addEventListener('click', runMonteCarloAnalysis);
             
             PENALTY_TABLE.slice().reverse().forEach(p => { dom.penaltyTableBody.insertRow().innerHTML = `<td>≥ ${p.days}</td><td>${(p.penalty * 100).toFixed(2)}%</td>`; });
@@ -682,6 +833,7 @@
 
             handleBidderSelectChange();
             calculateAndRender();
+            initMap();
         };
 
         window.addEventListener('load', init);
