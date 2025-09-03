@@ -20,7 +20,8 @@
             margin-bottom: 1.5rem;
         }
         .label {
-            display: block;
+            display: inline-flex; /* Changed from block */
+            align-items: center; /* Added */
             font-weight: 500;
             color: #4b5563;
             margin-bottom: 0.5rem;
@@ -41,6 +42,65 @@
         }
         .legend-table th, .legend-table td { padding: 0.5rem 1rem; text-align: center; border: 1px solid #e5e7eb; }
         .legend-table th { background-color: #f3f4f6; font-weight: 600; }
+
+        /* Tooltip styles */
+        .tooltip-container {
+            position: relative;
+        }
+
+        .tooltip-icon {
+            display: inline-block;
+            cursor: help;
+            font-weight: 500;
+            color: #9ca3af; /* gray-400 */
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 9999px;
+            width: 1.125rem; /* 18px */
+            height: 1.125rem; /* 18px */
+            font-size: 0.75rem; /* 12px */
+            line-height: 1rem; /* Adjust for vertical centering */
+            text-align: center;
+            margin-left: 0.375rem;
+            vertical-align: middle;
+            user-select: none; /* Prevent text selection */
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 240px;
+            background-color: #262626;
+            color: #fff;
+            text-align: left;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            position: absolute;
+            z-index: 10;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #262626 transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -69,17 +129,20 @@
                              <select id="bidderNameSelect" class="input"></select>
                              <input type="text" id="otherBidderName" class="input mt-2" placeholder="Enter custom name" style="display: none;">
                         </div>
-                        <div>
-                            <label for="competitorPriceMin" class="label text-sm">Min Price (PHP)</label>
+                        <div class="tooltip-container">
+                            <label for="competitorPriceMin" class="label text-sm">Min Price (PHP)<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorPriceMin" class="input" value="11.50" step="0.01">
+                            <span class="tooltip-text">The lowest or most likely price this bidder is expected to offer. This is their primary bid price for the main ranking.</span>
                         </div>
-                         <div>
-                            <label for="competitorPriceMax" class="label text-sm">Max Price (PHP)</label>
+                         <div class="tooltip-container">
+                            <label for="competitorPriceMax" class="label text-sm">Max Price (PHP)<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorPriceMax" class="input" placeholder="Optional" step="0.01">
+                            <span class="tooltip-text">Optional. The highest price a bidder might offer. Used for Monte Carlo analysis to simulate a range of possible bid prices.</span>
                         </div>
-                         <div>
-                            <label for="competitorCapacity" class="label text-sm">Capacity (MW)</label>
+                         <div class="tooltip-container">
+                            <label for="competitorCapacity" class="label text-sm">Capacity (MW)<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorCapacity" class="input" value="850">
+                            <span class="tooltip-text">The total generation capacity this bidder is offering in Megawatts. This contributes to the Capacity Score.</span>
                         </div>
                     </div>
                     <button id="addBidderBtn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
@@ -93,45 +156,51 @@
                     <div>
                          <h3 class="text-lg font-semibold mb-2 text-gray-700">Benchmark Pricing & Foundation</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="monopileGearPrice" class="label">Monopile GEAR Price</label>
+                            <div class="tooltip-container">
+                                <label for="monopileGearPrice" class="label">Monopile GEAR Price<span class="tooltip-icon">?</span></label>
                                 <input type="number" id="monopileGearPrice" class="input" value="12.00" step="0.01">
+                                <span class="tooltip-text">Green Energy Auction Reserve (GEAR) price for projects using Monopile foundations. Bids above this are disqualified if Monopile is selected.</span>
                             </div>
-                            <div>
-                                <label for="jacketGearPrice" class="label">Jacket GEAR Price</label>
+                            <div class="tooltip-container">
+                                <label for="jacketGearPrice" class="label">Jacket GEAR Price<span class="tooltip-icon">?</span></label>
                                 <input type="number" id="jacketGearPrice" class="input" value="12.10" step="0.01">
+                                <span class="tooltip-text">GEAR price for projects using Jacket foundations. Bids above this are disqualified if Jacket is selected.</span>
                             </div>
-                            <div>
-                                <label for="foundationType" class="label">Auction Foundation</label>
+                            <div class="tooltip-container">
+                                <label for="foundationType" class="label">Auction Foundation<span class="tooltip-icon">?</span></label>
                                 <select id="foundationType" class="select">
                                     <option value="Monopile" selected>Monopile</option>
                                     <option value="Jacket">Jacket</option>
                                 </select>
+                                <span class="tooltip-text">The primary foundation type for the auction. This determines which GEAR price is used as the benchmark for disqualification.</span>
                             </div>
                         </div>
                         <div id="gearPriceError" class="text-red-600 text-xs mt-2"></div>
                     </div>
                     <hr>
-                    <div>
-                        <h3 class="text-lg font-semibold mb-2 text-gray-700">Delivery Commencement Date (DCD)</h3>
+                    <div class="tooltip-container">
+                        <label for="dcd" class="label text-lg font-semibold text-gray-700">Delivery Commencement Date (DCD)<span class="tooltip-icon">?</span></label>
                         <input type="date" id="dcd" class="input" value="2028-05-15">
+                        <span class="tooltip-text">The date the bidder commits to start delivering power. Earlier dates generally receive higher scores, as defined in the DCD Scoring Table.</span>
                     </div>
                     <hr>
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-gray-700">Grid Readiness</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="gridReadinessLevel" class="label">Level of Grid Readiness</label>
+                            <div class="tooltip-container">
+                                <label for="gridReadinessLevel" class="label">Level of Grid Readiness<span class="tooltip-icon">?</span></label>
                                 <select id="gridReadinessLevel" class="select">
                                     <option value="3">Level 3</option>
                                     <option value="2" selected>Level 2</option>
                                     <option value="1">Level 1</option>
                                     <option value="0">Level 0</option>
                                 </select>
+                                <span class="tooltip-text">The bidder's documented progress in securing grid connection. Higher levels score better (Level 3 is highest). Level 0 is disqualified.</span>
                             </div>
-                            <div>
-                                <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date</label>
+                            <div class="tooltip-container">
+                                <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date<span class="tooltip-icon">?</span></label>
                                 <input type="date" id="gridFacilityReadinessDate" class="input" value="2028-08-01">
+                                <span class="tooltip-text">The date the grid infrastructure is expected to be ready. A penalty is applied if the DCD is significantly earlier than this date.</span>
                             </div>
                         </div>
                     </div>
@@ -146,9 +215,10 @@
                             <label for="monteCarloBidderSelect" class="label text-sm">Your Bid to Analyze</label>
                             <select id="monteCarloBidderSelect" class="input"></select>
                         </div>
-                        <div>
-                            <label for="monteCarloIterations" class="label text-sm">Simulations</label>
+                        <div class="tooltip-container">
+                            <label for="monteCarloIterations" class="label text-sm">Simulations<span class="tooltip-icon">?</span></label>
                             <input type="number" id="monteCarloIterations" class="input" value="1000">
+                            <span class="tooltip-text">The number of times to run the auction simulation. Higher numbers provide more accurate probabilities but may take slightly longer to compute.</span>
                         </div>
                     </div>
                     <button id="runMonteCarloBtn" class="mt-4 w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700">Calculate Win Probability</button>
@@ -165,8 +235,16 @@
                     <div class="card">
                          <h3 class="text-xl font-semibold mb-4 text-blue-600 text-center">Auction Awarding</h3>
                          <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div><label for="installationTarget" class="label text-sm">Target (MW)</label><input type="number" id="installationTarget" class="input" value="3300"></div>
-                            <div><label for="marginalCap" class="label text-sm">Marginal Cap (MW)</label><input type="number" id="marginalCap" class="input" value="100"></div>
+                            <div class="tooltip-container">
+                                <label for="installationTarget" class="label text-sm">Target (MW)<span class="tooltip-icon">?</span></label>
+                                <input type="number" id="installationTarget" class="input" value="3300">
+                                <span class="tooltip-text">The total capacity in Megawatts (MW) that the auction aims to award to winning bidders.</span>
+                            </div>
+                            <div class="tooltip-container">
+                                <label for="marginalCap" class="label text-sm">Marginal Cap (MW)<span class="tooltip-icon">?</span></label>
+                                <input type="number" id="marginalCap" class="input" value="100">
+                                <span class="tooltip-text">An extra capacity buffer. The last winning bidder ('marginal' bidder) can be awarded up to their full bid if it's within the remaining target + this cap.</span>
+                            </div>
                         </div>
                         <div class="mb-4 text-center p-2 bg-gray-100 rounded-md">
                             <p class="font-semibold text-sm">GEAR Ratio Benchmark: <span id="highestGearRatioValue" class="text-blue-600">0.000</span></p>
@@ -388,18 +466,70 @@
              return `<tr class="border-b"><td class="py-2">${index + 1}</td><td class="py-2 font-medium">${bid.name}</td><td class="py-2 text-center">${bid.total.toFixed(2)}</td><td class="py-2 text-center">${bid.awardedMW}</td><td class="py-2 text-center font-semibold ${statusClass}">${bid.awardStatus}</td></tr>`;
         };
         
-        const generateMonteCarloDiscussion = (bidderName, probability) => {
-            let advice = '';
+        const generateMonteCarloDiscussion = (bidderName, probability, requiredPriceDrops, scoreGaps, sharedDetails) => {
+            let baseAdvice = '';
             if (probability < 30) {
-                advice = `<p class="mt-2 pt-2 border-t border-gray-200"><strong>Suggestion:</strong> To improve <strong>${bidderName}'s</strong> chances, consider submitting a more competitive (lower) price, or re-evaluating the accuracy of competitor price ranges.</p>`;
+                baseAdvice = `To improve <strong>${bidderName}'s</strong> chances, significant bid improvements are needed.`;
             } else if (probability < 70) {
-                advice = `<p class="mt-2 pt-2 border-t border-gray-200"><strong>Outlook:</strong> <strong>${bidderName}</strong> has a moderate chance of winning. The outcome is sensitive to how aggressively competitors bid within their ranges.</p>`;
+                baseAdvice = `<strong>${bidderName}</strong> has a moderate chance of winning. The outcome is sensitive to how aggressively competitors bid. Small improvements could increase the win probability.`;
             } else {
-                advice = `<p class="mt-2 pt-2 border-t border-gray-200"><strong>Outlook:</strong> <strong>${bidderName}</strong> is in a strong position. The current bid is competitive across most likely scenarios.</p>`;
+                baseAdvice = `<strong>${bidderName}</strong> is in a strong position. The current bid is competitive across most likely scenarios.`;
             }
-            return `<h4 class="font-semibold mb-2 text-gray-800">Understanding Probability for ${bidderName}</h4>
-                    <p>This analysis accounts for the uncertainty in competitor pricing. A high win probability suggests your bid is very competitive. A low probability might indicate your bid is only successful under very specific, favorable conditions, signaling higher risk.</p>
-                    ${advice}`;
+
+            let suggestionHtml = '';
+            if (probability < 99 && requiredPriceDrops.length > 0) {
+                const avgPriceDrop = requiredPriceDrops.reduce((a, b) => a + b, 0) / requiredPriceDrops.length;
+                const avgScoreGap = scoreGaps.reduce((a, b) => a + b, 0) / scoreGaps.length;
+
+                // DCD Suggestion
+                const currentDcdScore = DCD_SCORING_TABLE.find(e => new Date(sharedDetails.dcd) >= new Date(e.start + 'T00:00:00') && new Date(sharedDetails.dcd) <= new Date(e.end + 'T00:00:00'))?.score || 0;
+                const requiredDcdScoreImprovement = avgScoreGap / WEIGHTS.dcd;
+                const targetDcdScore = currentDcdScore + requiredDcdScoreImprovement;
+                const betterDcdEntry = DCD_SCORING_TABLE.find(e => e.score >= targetDcdScore);
+                const dcdSuggestion = betterDcdEntry ? `Alternatively, improving the DCD score to ~${Math.ceil(targetDcdScore)} (e.g., by setting a DCD in the period around <strong>${new Date(betterDcdEntry.start+'T00:00:00').toLocaleDateString()}</strong>) could close this gap.` : 'The required DCD improvement is too large to be feasible.';
+
+                // Grid Suggestion
+                const currentGridLevel = parseInt(sharedDetails.gridReadinessLevel);
+                let gridSuggestion = '';
+                if (currentGridLevel < 3) {
+                    const currentGridBaseScore = GRID_SCORE_TABLE[currentGridLevel] || 0;
+                    const gridDate = new Date(sharedDetails.gridFacilityReadinessDate);
+                    const dcdDate = new Date(sharedDetails.dcd);
+                    const advanceDays = Math.max(0, (gridDate - dcdDate) / (1000 * 60 * 60 * 24) * -1);
+                    const penaltyEntry = PENALTY_TABLE.find(p => advanceDays >= p.days);
+                    const penaltyPercent = penaltyEntry ? penaltyEntry.penalty : 0;
+                    const currentGridRawScore = currentGridBaseScore * (1 - (penaltyPercent * 0.75));
+
+                    const requiredGridScoreImprovement = avgScoreGap / WEIGHTS.grid;
+                    const targetGridScore = currentGridRawScore + requiredGridScoreImprovement;
+
+                    const nextLevel = currentGridLevel + 1;
+                    const nextLevelGridBaseScore = GRID_SCORE_TABLE[nextLevel] || 0;
+                    const nextLevelGridRawScore = nextLevelGridBaseScore * (1 - (penaltyPercent * 0.75));
+                    
+                    if (targetGridScore <= nextLevelGridRawScore) {
+                        gridSuggestion = `Or, improving Grid Readiness to <strong>Level ${nextLevel}</strong> would likely be sufficient to become a winner.`;
+                    } else {
+                        gridSuggestion = `Improving Grid Readiness to <strong>Level ${nextLevel}</strong> would help but may not be enough on its own.`;
+                    }
+                }
+                
+                suggestionHtml = `
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        <h5 class="font-semibold text-gray-700">Improvement Suggestions:</h5>
+                        <p class="text-xs text-gray-500 mb-2">Based on losing scenarios, here are ways to bridge the average score gap of <strong>${avgScoreGap.toFixed(2)}</strong> points:</p>
+                        <ul class="list-disc list-inside space-y-2 text-sm">
+                            <li><strong>Price:</strong> On average, a price reduction of around <strong>₱${avgPriceDrop.toFixed(2)}</strong> was needed to secure a win.</li>
+                            <li><strong>DCD:</strong> ${dcdSuggestion}</li>
+                            ${gridSuggestion ? `<li><strong>Grid:</strong> ${gridSuggestion}</li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            return `<h4 class="font-semibold mb-2 text-gray-800">Analysis for ${bidderName}</h4>
+                    <p>${baseAdvice}</p>
+                    ${suggestionHtml}`;
         };
 
 
@@ -463,6 +593,9 @@
 
             let winCount = 0;
             const sharedDetails = { foundationType: dom.foundationType.value, dcd: dom.dcd.value, gridReadinessLevel: dom.gridReadinessLevel.value, gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value };
+            
+            let requiredPriceDrops = [];
+            let scoreGaps = [];
 
             for (let i = 0; i < iterations; i++) {
                 const simBidders = JSON.parse(JSON.stringify(bidders));
@@ -473,15 +606,52 @@
                         bid.price = bid.priceMin;
                     }
                 });
+
                 const { rankedBidders } = runFullAuction(simBidders, sharedDetails);
                 const targetResult = rankedBidders.find(b => b.id === bidderId);
+                
                 if (targetResult && (targetResult.awardStatus === 'Winner' || targetResult.awardStatus === 'Marginal')) {
                     winCount++;
+                } else if (targetResult) { // Bidder lost
+                    const winningBidders = rankedBidders.filter(b => b.awardStatus === 'Winner' || b.awardStatus === 'Marginal');
+                    if (winningBidders.length > 0) {
+                        const lastWinnerScore = winningBidders[winningBidders.length - 1].total;
+                        const scoreGap = lastWinnerScore - targetResult.total;
+                        if (scoreGap > 0) {
+                           scoreGaps.push(scoreGap);
+                           // Find the required price drop for this scenario
+                           let testBidders = JSON.parse(JSON.stringify(simBidders));
+                           let testBidder = testBidders.find(b => b.id === bidderId);
+                           const originalPrice = testBidder.price;
+                           let newPrice = originalPrice;
+
+                           for (let p = 0; p < 300; p++) { // Limit to 300 iterations (PHP 3.00 drop)
+                               newPrice -= 0.01;
+                               if (newPrice <= 0) break;
+                               testBidder.price = newPrice;
+                               
+                               const { rankedBidders: testRanked } = runFullAuction(testBidders, sharedDetails);
+                               const testTargetResult = testRanked.find(b => b.id === bidderId);
+
+                               if (testTargetResult && (testTargetResult.awardStatus === 'Winner' || testTargetResult.awardStatus === 'Marginal')) {
+                                   requiredPriceDrops.push(originalPrice - newPrice);
+                                   break;
+                               }
+                           }
+                        }
+                    }
                 }
             }
             const winProbability = (winCount / iterations) * 100;
             dom.monteCarloResult.innerHTML = `Win Probability: <span class="text-teal-600">${winProbability.toFixed(2)}%</span>`;
-            dom.monteCarloDiscussion.innerHTML = generateMonteCarloDiscussion(bidderToAnalyze.name, winProbability);
+            
+            dom.monteCarloDiscussion.innerHTML = generateMonteCarloDiscussion(
+                bidderToAnalyze.name, 
+                winProbability,
+                requiredPriceDrops,
+                scoreGaps,
+                sharedDetails
+            );
         };
 
         const updateAnalysisBidderSelect = () => {
