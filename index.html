@@ -160,9 +160,10 @@
                             <span class="tooltip-text">The total generation capacity this bidder is offering in Megawatts. This contributes to the Capacity Score.</span>
                         </div>
                     </div>
-                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button id="addBidderBtn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
                         <button id="predictBidsBtn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Load Predicted Bids</button>
+                        <button id="clearBidsBtn" class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">Clear Bidders</button>
                     </div>
                     <div id="addBidderError" class="text-red-600 text-sm mt-2"></div>
                     <div id="biddersListContainer" class="mt-4 space-y-3"></div>
@@ -354,6 +355,7 @@
             competitorPriceMostLikely: document.getElementById('competitorPriceMostLikely'),
             competitorCapacity: document.getElementById('competitorCapacity'), addBidderBtn: document.getElementById('addBidderBtn'),
             predictBidsBtn: document.getElementById('predictBidsBtn'),
+            clearBidsBtn: document.getElementById('clearBidsBtn'),
             addBidderError: document.getElementById('addBidderError'), biddersListContainer: document.getElementById('biddersListContainer'),
             foundationType: document.getElementById('foundationType'), 
             monopileGearPrice: document.getElementById('monopileGearPrice'), jacketGearPrice: document.getElementById('jacketGearPrice'),
@@ -648,6 +650,11 @@
 
             calculateAndRender();
         };
+        
+        const clearBidders = () => {
+            bidders = [];
+            calculateAndRender();
+        };
 
         window.removeBidder = (id) => { bidders = bidders.filter(b => b.id !== id); calculateAndRender(); };
         window.toggleDetails = (id) => { 
@@ -824,6 +831,7 @@
             document.querySelectorAll('.input, .select').forEach(el => el.addEventListener('input', calculateAndRender));
             dom.addBidderBtn.addEventListener('click', addBidder);
             dom.predictBidsBtn.addEventListener('click', predictBids);
+            dom.clearBidsBtn.addEventListener('click', clearBidders);
             dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
             dom.exportCsvBtn.addEventListener('click', exportToCsv);
             dom.runMonteCarloBtn.addEventListener('click', runMonteCarloAnalysis);
@@ -840,5 +848,4 @@
     </script>
 </body>
 </html>
-
 
