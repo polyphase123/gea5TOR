@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEA-5 Bid Evaluation Simulator</title>
+    <title>GEA-5 Bid Evaluation Simulator (Advanced)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
         }
         .card {
             background-color: white;
@@ -16,21 +17,12 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            transition: all 0.3s ease-in-out;
-        }
-        .card:hover {
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        .label-container {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
         }
         .label {
             display: block;
             font-weight: 500;
             color: #4b5563;
+            margin-bottom: 0.5rem;
         }
         .input, .select {
             width: 100%;
@@ -38,106 +30,38 @@
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             background-color: #f9fafb;
-            transition: border-color 0.2s;
-        }
-        .input:focus, .select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
         }
         .output-value {
-            font-weight: 600;
-            color: #1f2937;
-            background-color: #f3f4f6;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            text-align: center;
-            min-height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-weight: 600; color: #1f2937; background-color: #f3f4f6;
+            padding: 0.5rem 1rem; border-radius: 0.5rem; text-align: center;
+            min-height: 42px; display: flex; align-items: center; justify-content: center;
         }
-        .disqualified {
-            color: #dc2626;
-            font-weight: 700;
-        }
-        .qualified {
-            color: #16a34a;
-            font-weight: 700;
-        }
-        /* Tooltip styles */
-        .info-icon {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            color: #6b7280;
-        }
+        .disqualified { color: #dc2626; font-weight: 700; }
+        .qualified { color: #16a34a; font-weight: 700; }
+        .info-icon { position: relative; display: inline-block; cursor: pointer; color: #6b7280; }
         .tooltip {
-            visibility: hidden;
-            width: 320px;
-            background-color: #1f2937;
-            color: #fff;
-            text-align: left;
-            font-weight: normal;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            border-radius: 6px;
-            padding: 12px 16px;
-            position: absolute;
-            z-index: 10;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -160px; /* Use half of the width to center */
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .tooltip strong {
-            color: #93c5fd;
+            visibility: hidden; width: 320px; background-color: #1f2937; color: #fff;
+            text-align: left; font-weight: normal; font-size: 0.875rem; line-height: 1.5;
+            border-radius: 6px; padding: 12px 16px; position: absolute; z-index: 10;
+            bottom: 125%; left: 50%; margin-left: -160px; opacity: 0; transition: opacity 0.3s;
         }
         .tooltip::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #1f2937 transparent transparent transparent;
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+            border-width: 5px; border-style: solid; border-color: #1f2937 transparent transparent transparent;
         }
-        .info-icon:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        .legend-table th, .legend-table td {
-            padding: 0.5rem 1rem;
-            text-align: center;
-            border: 1px solid #e5e7eb;
-        }
-        .legend-table th {
-            background-color: #f3f4f6;
-            font-weight: 600;
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            background-color: #3b82f6;
-            color: white;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        .btn:hover {
-            background-color: #2563eb;
+        .info-icon:hover .tooltip { visibility: visible; opacity: 1; }
+        .legend-table th, .legend-table td { padding: 0.5rem 1rem; text-align: center; border: 1px solid #e5e7eb; }
+        .legend-table th { background-color: #f3f4f6; font-weight: 600; }
+        .details-section {
+            display: none;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin-top: 1rem;
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="text-gray-800">
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
         <header class="text-center mb-8">
@@ -148,94 +72,64 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Input Section -->
             <div class="lg:col-span-2">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Bidder's Input Data</h2>
-                
-                <!-- Price Offer Card -->
+                 <!-- Auction Bidders -->
                 <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-blue-600">1. Price Offer</h3>
+                    <h3 class="text-xl font-semibold mb-2 text-blue-600">Auction Bidders</h3>
+                     <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                        <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Target Period:</span> 2028-2030 | 
+                            <span class="font-semibold">Total Installation Target:</span> 3,300 MW
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div class="md:col-span-2">
+                             <label for="bidderNameSelect" class="label text-sm">Bidder Name</label>
+                             <select id="bidderNameSelect" class="input"></select>
+                             <input type="text" id="otherBidderName" class="input mt-2" placeholder="Enter custom name" style="display: none;">
+                        </div>
+                        <div>
+                            <label for="competitorPrice" class="label text-sm">Price (PHP)</label>
+                            <input type="number" id="competitorPrice" class="input" value="11.50" step="0.01">
+                        </div>
+                         <div>
+                            <label for="competitorCapacity" class="label text-sm">Capacity (MW)</label>
+                            <input type="number" id="competitorCapacity" class="input" value="850">
+                        </div>
+                    </div>
+                    <button id="addBidderBtn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
+                    <div id="addBidderError" class="text-red-600 text-sm mt-2"></div>
+                    <div id="biddersListContainer" class="mt-4 space-y-3"></div>
+                </div>
+
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Bid Details per Bidder</h2>
+                
+                <div class="card">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <div class="label-container">
-                                <label for="foundationType" class="label">Foundation Type</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the foundation type for the project. This determines the benchmark GEAR Price. <br><br><strong>Reference:</strong> Annex I, Page 1, "Type of Foundation" table.</span>
-                                </div>
-                            </div>
+                            <label for="foundationType" class="label">Foundation Type</label>
                             <select id="foundationType" class="select">
                                 <option value="Monopile" selected>Monopile</option>
                                 <option value="Jacket">Jacket</option>
                             </select>
                         </div>
                         <div>
-                            <div class="label-container">
-                                <label class="label">Benchmark GEAR Price</label>
-                                 <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">The benchmark price reflects the expected cost for a given foundation type. <br><br><strong>Reference:</strong> Annex I, Page 1, "Price Offer" Description.</span>
-                                </div>
-                            </div>
+                            <label class="label">Benchmark GEAR Price</label>
                             <div id="gearPrice" class="output-value">₱12.00</div>
                         </div>
-                        <div>
-                             <div class="label-container">
-                                <label for="offeredPrice" class="label">Bidder's Offered Price (PHP)</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter your bid's offered price. If this exceeds the benchmark GEAR Price, the bid is disqualified. <br><br><strong>Reference:</strong> Annex I, Page 1, "Price Offer" Disqualification Clause.</span>
-                                </div>
-                            </div>
-                            <input type="number" id="offeredPrice" class="input" value="11.50" step="0.01">
-                        </div>
-                        <div>
-                            <div class="label-container">
-                                <label for="highestGearRatio" class="label">Highest Gear Ratio (All Bids)</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">
-                                        Enter the highest Gear Ratio among all competing valid bids. This is used to normalize your price score.
-                                        <br><br>
-                                        <strong>Sample Calculation:</strong><br>
-                                        - Benchmark GEAR Price (Monopile): ₱12.00<br>
-                                        - Bidder's Offered Price: ₱11.50<br>
-                                        <em>GEAR Ratio = ₱12.00 / ₱11.50 ≈ 1.043</em>
-                                        <br><br>
-                                        <strong>Reference:</strong> Annex I, Page 1, "Price Offer" Description.
-                                    </span>
-                                </div>
-                            </div>
-                            <input type="number" id="highestGearRatio" class="input" value="1.08" step="0.01">
-                        </div>
                     </div>
                 </div>
 
-                <!-- DCD Card -->
                 <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-blue-600">2. Delivery Commencement Date (DCD)</h3>
-                    <div>
-                        <div class="label-container">
-                            <label for="dcd" class="label">Proposed DCD</label>
-                             <div class="info-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                <span class="tooltip">Select the proposed DCD. The score is based on how early this date is. Dates outside the 2028-2030 Delivery Commencement Period are disqualified. <br><br><strong>Reference:</strong> Annex I, Page 1, "Delivery Commencement Date (DCD)" Description.</span>
-                            </div>
-                        </div>
-                        <input type="date" id="dcd" class="input" value="2028-05-15">
-                    </div>
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">Delivery Commencement Date (DCD)</h3>
+                    <label for="dcd" class="label">Proposed DCD</label>
+                    <input type="date" id="dcd" class="input" value="2028-05-15">
                 </div>
 
-                <!-- Grid Readiness Card -->
                 <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-blue-600">3. Grid Readiness</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">Grid Readiness</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <div class="label-container">
-                                <label for="gridReadinessLevel" class="label">Level of Grid Readiness</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the current level of grid readiness. Level 0 results in disqualification. <br><br><strong>Reference:</strong> Annex I, Page 3, "GRID SCORE" table.</span>
-                                </div>
-                            </div>
+                            <label for="gridReadinessLevel" class="label">Level of Grid Readiness</label>
                             <select id="gridReadinessLevel" class="select">
                                 <option value="3">Level 3: With SIS + FS + Connection Agreement</option>
                                 <option value="2" selected>Level 2: With SIS + FS</option>
@@ -244,185 +138,46 @@
                             </select>
                         </div>
                         <div>
-                            <div class="label-container">
-                                <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Select the date the grid facility is expected to be ready. A penalty is applied if your DCD is earlier than this date. <br><br><strong>Reference:</strong> Annex I, Page 1, "Grid Readiness" Description.</span>
-                                </div>
-                            </div>
+                            <label for="gridFacilityReadinessDate" class="label">Grid Facility Readiness Date</label>
                             <input type="date" id="gridFacilityReadinessDate" class="input" value="2028-08-01">
                         </div>
                     </div>
                 </div>
-
-                <!-- Offer Capacity Card -->
-                <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-blue-600">4. Offer Capacity</h3>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <div class="label-container">
-                                <label for="offeredCapacity" class="label">Bidder's Offered Capacity (MW)</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter your project's proposed capacity in Megawatts (MW). <br><br><strong>Reference:</strong> Annex I, Page 1, "Offer Capacity" Description.</span>
-                                </div>
-                            </div>
-                            <input type="number" id="offeredCapacity" class="input" value="850">
-                        </div>
-                        <div>
-                            <div class="label-container">
-                                <label for="maxOfferedCapacity" class="label">Max Offered Capacity (All Bids, MW)</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Enter the maximum capacity offered among all competing bids. Your score is scaled relative to this value. <br><br><strong>Reference:</strong> Annex I, Page 1, "Offer Capacity" Description.</span>
-                                </div>
-                            </div>
-                            <input type="number" id="maxOfferedCapacity" class="input" value="1000">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- OSW Infrastructure Card -->
-                <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-blue-600">5. OSW Infrastructure</h3>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <div class="label-container">
-                                <label for="portType" class="label">Port Utilization Type</label>
-                                <div class="info-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                    <span class="tooltip">Per the TOR, this choice affects the final award. PPA ports have a queuing order based on bid score. Private ports require independent arrangements. <br><br><strong>Reference:</strong> GEA-5 TOR, Sections 8.1.2 & 15.</span>
-                                </div>
-                            </div>
-                            <select id="portType" class="select">
-                                <option value="PPA" selected>PPA-Administered Port</option>
-                                <option value="Private">Private Port</option>
-                            </select>
-                        </div>
-                         <div>
-                            <label class="label">Implication</label>
-                            <div id="portImplication" class="output-value text-sm text-left p-3">Eligible for PPA port queuing based on score.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calculate Button -->
-                <div class="mt-6 text-center">
-                    <button id="calculateBtn" class="w-full md:w-auto btn text-lg py-3 px-8">
-                        Calculate Score
-                    </button>
-                </div>
-
             </div>
 
             <!-- Output Section -->
             <div class="lg:col-span-1">
                 <div class="sticky top-8">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Evaluation Results</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Auction Results</h2>
                     <div class="card">
-                        <div class="space-y-4">
-                            <!-- Total Score -->
-                            <div class="text-center">
-                                <div class="label-container justify-center">
-                                    <p class="text-lg text-gray-600">Total Weighted Score</p>
-                                    <div class="info-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                        <span class="tooltip">This is the sum of the Final Scores of all criteria. Bids are ranked from highest to lowest score to meet the installation target. <br><br><strong>Reference:</strong> GEA-5 TOR, Section 7.4.1.</span>
-                                    </div>
-                                </div>
-                                <p id="totalScore" class="text-5xl font-bold text-blue-600">0.00</p>
-                                <p id="finalStatus" class="text-2xl font-bold mt-2 qualified">Qualified</p>
-                                <p id="disqualificationReason" class="text-sm text-red-600 mt-1 h-4"></p>
+                         <h3 class="text-xl font-semibold mb-4 text-blue-600 text-center">Auction Awarding</h3>
+                         <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="installationTarget" class="label text-sm">Target (MW)</label>
+                                <input type="number" id="installationTarget" class="input" value="3300">
                             </div>
-                            
-                            <hr class="my-4">
-
-                            <!-- Auction Context -->
-                             <h4 class="text-lg font-semibold text-center text-gray-700">Auction Context</h4>
-                             <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                                <div class="label-container">
-                                    <span class="font-medium">Installation Target (2028-2030):</span>
-                                    <div class="info-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                                        <span class="tooltip">The total capacity to be awarded for the 2028-2030 delivery period. <br><br><strong>Reference:</strong> GEA-5 TOR, Section 1.2 & GEA-5 NOA, Page 1.</span>
-                                    </div>
-                                </div>
-                                <span class="font-bold text-blue-600">3,300 MW</span>
-                             </div>
-
-                            <hr class="my-4">
-
-                            <!-- Score Breakdown -->
-                            <h4 class="text-lg font-semibold text-center text-gray-700">Score Breakdown</h4>
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="py-2">Criterion</th>
-                                        <th class="py-2 text-center">Raw Score</th>
-                                        <th class="py-2 text-center">Weight</th>
-                                        <th class="py-2 text-center">Final Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="py-2 font-medium">Price Offer</td>
-                                        <td id="priceRawScore" class="py-2 text-center">0.00</td>
-                                        <td class="py-2 text-center">70%</td>
-                                        <td id="priceFinalScore" class="py-2 text-center font-semibold">0.00</td>
-                                    </tr>
-                                    <tr class="bg-gray-50">
-                                        <td class="py-2 font-medium">DCD</td>
-                                        <td id="dcdRawScore" class="py-2 text-center">0.00</td>
-                                        <td class="py-2 text-center">10%</td>
-                                        <td id="dcdFinalScore" class="py-2 text-center font-semibold">0.00</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2 font-medium">Grid Readiness</td>
-                                        <td id="gridRawScore" class="py-2 text-center">0.00</td>
-                                        <td class="py-2 text-center">10%</td>
-                                        <td id="gridFinalScore" class="py-2 text-center font-semibold">0.00</td>
-                                    </tr>
-                                    <tr class="bg-gray-50">
-                                        <td class="py-2 font-medium">Offer Capacity</td>
-                                        <td id="capacityRawScore" class="py-2 text-center">0.00</td>
-                                        <td class="py-2 text-center">10%</td>
-                                        <td id="capacityFinalScore" class="py-2 text-center font-semibold">0.00</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            
-                            <hr class="my-4">
-                            
-                            <!-- Discussion of Scores -->
-                            <h4 class="text-lg font-semibold text-center text-gray-700">Discussion of Scores</h4>
-                            <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr class="border-b">
-                                        <th class="py-2 w-1/4">Criterion</th>
-                                        <th class="py-2">Remarks</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="align-top">
-                                        <td class="py-2 font-medium">Price Offer</td>
-                                        <td id="priceDiscussion" class="py-2 text-gray-600"></td>
-                                    </tr>
-                                    <tr class="bg-gray-50 align-top">
-                                        <td class="py-2 font-medium">DCD</td>
-                                        <td id="dcdDiscussion" class="py-2 text-gray-600"></td>
-                                    </tr>
-                                    <tr class="align-top">
-                                        <td class="py-2 font-medium">Grid Readiness</td>
-                                        <td id="gridDiscussion" class="py-2 text-gray-600"></td>
-                                    </tr>
-                                    <tr class="bg-gray-50 align-top">
-                                        <td class="py-2 font-medium">Offer Capacity</td>
-                                        <td id="capacityDiscussion" class="py-2 text-gray-600"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div>
+                                <label for="marginalCap" class="label text-sm">Marginal Cap (MW)</label>
+                                <input type="number" id="marginalCap" class="input" value="100">
+                            </div>
                         </div>
+                        <div class="mb-4 text-center p-2 bg-gray-100 rounded-md">
+                            <p class="font-semibold text-sm">GEAR Ratio Benchmark: <span id="highestGearRatioValue" class="text-blue-600">0.000</span></p>
+                            <p class="text-xs text-gray-500">Max(Benchmark Price / Bidder Price)</p>
+                        </div>
+                        <h4 class="text-lg font-semibold text-center text-gray-700 mb-2">Auction Ranking</h4>
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="py-2">Rank</th>
+                                    <th class="py-2">Bidder</th>
+                                    <th class="py-2 text-center">Score</th>
+                                    <th class="py-2 text-center">Awarded MW</th>
+                                    <th class="py-2 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -431,325 +186,403 @@
         <!-- Legends Section -->
         <div class="mt-12">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Scoring Legends</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- DCD Scoring Table -->
-                <div class="card">
-                    <h3 class="text-xl font-semibold mb-4 text-center">DCD Scoring Table</h3>
-                    <table class="w-full legend-table">
-                        <thead>
-                            <tr>
-                                <th>Score</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>100</td><td>1-Jan-28</td><td>31-Mar-28</td></tr>
-                            <tr><td>95</td><td>1-Apr-28</td><td>30-Jun-28</td></tr>
-                            <tr><td>91</td><td>1-Jul-28</td><td>30-Sep-28</td></tr>
-                            <tr><td>86</td><td>1-Oct-28</td><td>31-Dec-28</td></tr>
-                            <tr><td>82</td><td>1-Jan-29</td><td>31-Mar-29</td></tr>
-                            <tr><td>77</td><td>1-Apr-29</td><td>30-Jun-29</td></tr>
-                            <tr><td>73</td><td>1-Jul-29</td><td>30-Sep-29</td></tr>
-                            <tr><td>68</td><td>1-Oct-29</td><td>31-Dec-29</td></tr>
-                            <tr><td>64</td><td>1-Jan-30</td><td>31-Mar-30</td></tr>
-                            <tr><td>59</td><td>1-Apr-30</td><td>30-Jun-30</td></tr>
-                            <tr><td>55</td><td>1-Jul-30</td><td>30-Sep-30</td></tr>
-                            <tr><td>50</td><td>1-Oct-30</td><td>31-Dec-30</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Grid Readiness & Penalty -->
-                <div class="space-y-8">
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
                     <div class="card">
-                        <h3 class="text-xl font-semibold mb-4 text-center">Grid Score</h3>
-                         <table class="w-full legend-table">
+                        <h3 class="text-xl font-semibold mb-4 text-center">DCD Scoring Table</h3>
+                        <table class="w-full legend-table">
                             <thead>
-                                <tr>
-                                    <th>Score</th>
-                                    <th>Level</th>
-                                </tr>
+                                <tr><th>Score</th><th>Start Date</th><th>End Date</th></tr>
                             </thead>
-                            <tbody>
-                                <tr><td>100</td><td>3</td></tr>
-                                <tr><td>75</td><td>2</td></tr>
-                                <tr><td>50</td><td>1</td></tr>
-                                <tr><td>Disqualified</td><td>0</td></tr>
-                            </tbody>
+                            <tbody id="dcdScoringTableBody"></tbody>
                         </table>
-                        <div class="mt-4 text-sm text-gray-600 space-y-1 text-left">
-                            <p><strong>Level 3</strong> = With SIS + FS + Connection Agreement</p>
-                            <p><strong>Level 2</strong> = With SIS + FS</p>
-                            <p><strong>Level 1</strong> = With SIS only</p>
-                            <p><strong>Level 0</strong> = No SIS or grid available only post-2030</p>
-                        </div>
                     </div>
                     <div class="card">
                         <h3 class="text-xl font-semibold mb-4 text-center">Score Decrement of Advance DCD vs Grid Readiness</h3>
-                        <table class="w-full legend-table">
-                             <thead>
-                                <tr>
-                                    <th>No. of Days</th>
-                                    <th>% of Penalty</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>0</td><td>0.00%</td></tr>
-                                <tr><td>30</td><td>3.00%</td></tr>
-                                <tr><td>60</td><td>6.00%</td></tr>
-                                <tr><td>90</td><td>9.00%</td></tr>
-                                <tr><td>120</td><td>12.00%</td></tr>
-                                <tr><td>150</td><td>15.00%</td></tr>
-                                <tr><td>180</td><td>18.00%</td></tr>
-                                <tr><td>...</td><td>...</td></tr>
-                                <tr><td>750</td><td>75.00%</td></tr>
-                            </tbody>
-                        </table>
+                        <div class="max-h-64 overflow-y-auto">
+                            <table class="w-full legend-table">
+                                <thead><tr><th>Days Ahead</th><th>Penalty</th></tr></thead>
+                                <tbody id="penaltyTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Grid Score & Legend</h3>
+                    <table class="w-full legend-table">
+                        <thead><tr><th>Score</th><th>Level</th></tr></thead>
+                        <tbody>
+                            <tr><td>100</td><td>3</td></tr>
+                            <tr><td>75</td><td>2</td></tr>
+                            <tr><td>50</td><td>1</td></tr>
+                            <tr><td>Disqualified</td><td>0</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="mt-4 text-sm text-gray-600 space-y-1 text-left p-2 bg-gray-50 rounded-md">
+                        <p><strong>Level 3:</strong> With SIS + FS + Connection Agreement</p>
+                        <p><strong>Level 2:</strong> With SIS + FS</p>
+                        <p><strong>Level 1:</strong> With SIS only</p>
+                        <p><strong>Level 0:</strong> No SIS or grid available only post-2030</p>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- DATA and PARAMETERS from PDF ---
-        const GEAR_PRICES = {
-            Monopile: 12.00,
-            Jacket: 12.10
-        };
-
-        const WEIGHTS = {
-            price: 0.70,
-            dcd: 0.10,
-            grid: 0.10,
-            capacity: 0.10
-        };
-
+        // --- DATA and PARAMETERS ---
+        const GEAR_PRICES = { Monopile: 12.00, Jacket: 12.10 };
+        const WEIGHTS = { price: 0.70, dcd: 0.10, grid: 0.10, capacity: 0.10 };
         const DCD_SCORING_TABLE = [
-            { score: 100, start: '2028-01-01', end: '2028-03-31' },
-            { score: 95, start: '2028-04-01', end: '2028-06-30' },
-            { score: 91, start: '2028-07-01', end: '2028-09-30' },
-            { score: 86, start: '2028-10-01', end: '2028-12-31' },
-            { score: 82, start: '2029-01-01', end: '2029-03-31' },
-            { score: 77, start: '2029-04-01', end: '2029-06-30' },
-            { score: 73, start: '2029-07-01', end: '2029-09-30' },
-            { score: 68, start: '2029-10-01', end: '2029-12-31' },
-            { score: 64, start: '2030-01-01', end: '2030-03-31' },
-            { score: 59, start: '2030-04-01', end: '2030-06-30' },
-            { score: 55, start: '2030-07-01', end: '2030-09-30' },
-            { score: 50, start: '2030-10-01', end: '2030-12-31' }
+            { score: 100, start: '2028-01-01', end: '2028-03-31' }, { score: 95, start: '2028-04-01', end: '2028-06-30' },
+            { score: 91, start: '2028-07-01', end: '2028-09-30' }, { score: 86, start: '2028-10-01', end: '2028-12-31' },
+            { score: 82, start: '2029-01-01', end: '2029-03-31' }, { score: 77, start: '2029-04-01', end: '2029-06-30' },
+            { score: 73, start: '2029-07-01', end: '2029-09-30' }, { score: 68, start: '2029-10-01', end: '2029-12-31' },
+            { score: 64, start: '2030-01-01', end: '2030-03-31' }, { score: 59, start: '2030-04-01', end: '2030-06-30' },
+            { score: 55, start: '2030-07-01', end: '2030-09-30' }, { score: 50, start: '2030-10-01', end: '2030-12-31' }
         ];
-
         const GRID_SCORE_TABLE = { 3: 100, 2: 75, 1: 50, 0: 'Disqualified' };
-
         const PENALTY_TABLE = [
-            { days: 750, penalty: 0.75 }, { days: 720, penalty: 0.72 },
-            { days: 690, penalty: 0.69 }, { days: 660, penalty: 0.66 },
-            { days: 630, penalty: 0.63 }, { days: 600, penalty: 0.60 },
-            { days: 570, penalty: 0.57 }, { days: 540, penalty: 0.54 },
-            { days: 510, penalty: 0.51 }, { days: 480, penalty: 0.48 },
-            { days: 450, penalty: 0.45 }, { days: 420, penalty: 0.42 },
-            { days: 390, penalty: 0.39 }, { days: 360, penalty: 0.36 },
-            { days: 330, penalty: 0.33 }, { days: 300, penalty: 0.30 },
-            { days: 270, penalty: 0.27 }, { days: 240, penalty: 0.24 },
-            { days: 210, penalty: 0.21 }, { days: 180, penalty: 0.18 },
-            { days: 150, penalty: 0.15 }, { days: 120, penalty: 0.12 },
-            { days: 90, penalty: 0.09 }, { days: 60, penalty: 0.06 },
+            { days: 750, penalty: 0.75 }, { days: 720, penalty: 0.72 }, { days: 690, penalty: 0.69 },
+            { days: 660, penalty: 0.66 }, { days: 630, penalty: 0.63 }, { days: 600, penalty: 0.60 },
+            { days: 570, penalty: 0.57 }, { days: 540, penalty: 0.54 }, { days: 510, penalty: 0.51 },
+            { days: 480, penalty: 0.48 }, { days: 450, penalty: 0.45 }, { days: 420, penalty: 0.42 },
+            { days: 390, penalty: 0.39 }, { days: 360, penalty: 0.36 }, { days: 330, penalty: 0.33 },
+            { days: 300, penalty: 0.30 }, { days: 270, penalty: 0.27 }, { days: 240, penalty: 0.24 },
+            { days: 210, penalty: 0.21 }, { days: 180, penalty: 0.18 }, { days: 150, penalty: 0.15 },
+            { days: 120, penalty: 0.12 }, { days: 90, penalty: 0.09 }, { days: 60, penalty: 0.06 },
             { days: 30, penalty: 0.03 }, { days: 0, penalty: 0.00 }
         ];
+        const PRESET_BIDDERS = [
+            { name: 'CIP & ACEN Corporation', capacity: 1000 },
+            { name: 'Triconti Windkraft Group', capacity: 450 },
+            { name: 'CleanTech & The Blue Circle', capacity: 1200 },
+            { name: 'Corio Generation', capacity: 3000 },
+            { name: 'BlueFloat Energy', capacity: 7000 },
+            { name: 'BuhaWind Consortium', capacity: 4000 },
+            { name: 'San Miguel Corporation', capacity: '' },
+            { name: 'Aboitiz Power Corp.', capacity: '' },
+            { name: 'The Lopez Group (First Gen)', capacity: '' },
+        ];
 
+        // --- GLOBAL STATE ---
+        let bidders = [];
+        
         // --- DOM ELEMENTS ---
-        const inputs = {
+        const dom = {
+            biddersListContainer: document.getElementById('biddersListContainer'),
+            addBidderBtn: document.getElementById('addBidderBtn'),
+            bidderNameSelect: document.getElementById('bidderNameSelect'),
+            otherBidderName: document.getElementById('otherBidderName'),
+            competitorPrice: document.getElementById('competitorPrice'),
+            competitorCapacity: document.getElementById('competitorCapacity'),
+            addBidderError: document.getElementById('addBidderError'),
             foundationType: document.getElementById('foundationType'),
-            offeredPrice: document.getElementById('offeredPrice'),
-            highestGearRatio: document.getElementById('highestGearRatio'),
+            gearPrice: document.getElementById('gearPrice'),
             dcd: document.getElementById('dcd'),
             gridReadinessLevel: document.getElementById('gridReadinessLevel'),
             gridFacilityReadinessDate: document.getElementById('gridFacilityReadinessDate'),
-            offeredCapacity: document.getElementById('offeredCapacity'),
-            maxOfferedCapacity: document.getElementById('maxOfferedCapacity'),
-            portType: document.getElementById('portType')
+            installationTarget: document.getElementById('installationTarget'),
+            marginalCap: document.getElementById('marginalCap'),
+            rankingTableBody: document.getElementById('rankingTableBody'),
+            penaltyTableBody: document.getElementById('penaltyTableBody'),
+            dcdScoringTableBody: document.getElementById('dcdScoringTableBody'),
+            highestGearRatioValue: document.getElementById('highestGearRatioValue')
         };
         
-        const calculateBtn = document.getElementById('calculateBtn');
-        
-        const outputs = {
-            gearPrice: document.getElementById('gearPrice'),
-            priceRawScore: document.getElementById('priceRawScore'),
-            priceFinalScore: document.getElementById('priceFinalScore'),
-            dcdRawScore: document.getElementById('dcdRawScore'),
-            dcdFinalScore: document.getElementById('dcdFinalScore'),
-            gridRawScore: document.getElementById('gridRawScore'),
-            gridFinalScore: document.getElementById('gridFinalScore'),
-            capacityRawScore: document.getElementById('capacityRawScore'),
-            capacityFinalScore: document.getElementById('capacityFinalScore'),
-            totalScore: document.getElementById('totalScore'),
-            finalStatus: document.getElementById('finalStatus'),
-            disqualificationReason: document.getElementById('disqualificationReason'),
-            portImplication: document.getElementById('portImplication'),
-            priceDiscussion: document.getElementById('priceDiscussion'),
-            dcdDiscussion: document.getElementById('dcdDiscussion'),
-            gridDiscussion: document.getElementById('gridDiscussion'),
-            capacityDiscussion: document.getElementById('capacityDiscussion')
-        };
-
-        // --- CALCULATION LOGIC ---
-        function calculateScores() {
-            let totalScore = 0;
+        // --- CORE FUNCTIONS ---
+        const calculateScoresForBidder = (bidder, sharedDetails, maxValues) => {
+            const scores = {};
             let isDisqualified = false;
-            let disqualificationReason = '';
 
-            // 1. Price Offer Calculation
-            const foundationType = inputs.foundationType.value;
-            const gearPrice = GEAR_PRICES[foundationType];
-            const offeredPrice = parseFloat(inputs.offeredPrice.value);
-            const highestGearRatio = parseFloat(inputs.highestGearRatio.value);
-            let priceRawScore = 0;
-            let priceDiscussionText = '';
-            
-            if (offeredPrice > gearPrice) {
+            // Price Score
+            const gearPrice = GEAR_PRICES[sharedDetails.foundationType];
+            if (bidder.price > gearPrice) {
                 isDisqualified = true;
-                disqualificationReason = 'Price Offer exceeds Benchmark GEAR Price.';
-                priceRawScore = 0;
-                priceDiscussionText = `The offered price of ₱${offeredPrice.toFixed(2)} exceeds the benchmark of ₱${gearPrice.toFixed(2)}, resulting in disqualification.`;
-            } else if (offeredPrice > 0 && highestGearRatio > 0) {
-                const gearRatio = gearPrice / offeredPrice;
-                const normalizedRatio = gearRatio / highestGearRatio;
-                priceRawScore = 50 + (normalizedRatio * (100 - 50));
-                priceRawScore = Math.min(100, Math.max(0, priceRawScore)); // Clamp
-                priceDiscussionText = `Your GEAR Ratio (${gearRatio.toFixed(3)}) is normalized against the highest ratio (${highestGearRatio.toFixed(3)}), resulting in a raw score of ${priceRawScore.toFixed(2)}.`;
             }
-            const priceFinalScore = priceRawScore * WEIGHTS.price;
-            if (!isDisqualified) totalScore += priceFinalScore;
+            const gearRatio = bidder.price > 0 ? gearPrice / bidder.price : 0;
+            scores.gearRatio = gearRatio;
+            const normalizedRatio = maxValues.highestGearRatio > 0 ? gearRatio / maxValues.highestGearRatio : 0;
+            scores.priceRaw = isDisqualified ? 0 : 50 + (normalizedRatio * 50);
+            scores.priceFinal = scores.priceRaw * WEIGHTS.price;
 
-            // 2. DCD Calculation
-            const dcdDate = new Date(inputs.dcd.value);
-            let dcdRawScore = 0;
-            let dcdDiscussionText = '';
-            const dcdScoreEntry = DCD_SCORING_TABLE.find(entry => {
-                const start = new Date(entry.start);
-                const end = new Date(entry.end);
-                return dcdDate >= start && dcdDate <= end;
+            // DCD Score
+            const dcdDate = new Date(sharedDetails.dcd);
+            const dcdEntry = DCD_SCORING_TABLE.find(e => dcdDate >= new Date(e.start) && dcdDate <= new Date(e.end));
+            scores.dcdRaw = dcdEntry ? dcdEntry.score : 0;
+            if (!dcdEntry) isDisqualified = true;
+            scores.dcdFinal = scores.dcdRaw * WEIGHTS.dcd;
+            
+            // Grid Score
+            const gridLevel = parseInt(sharedDetails.gridReadinessLevel);
+            const gridBaseScore = GRID_SCORE_TABLE[gridLevel];
+            if (gridBaseScore === 'Disqualified') isDisqualified = true;
+            const gridDate = new Date(sharedDetails.gridFacilityReadinessDate);
+            const advanceDays = Math.max(0, (gridDate - dcdDate) / (1000 * 60 * 60 * 24) * -1);
+            const penaltyEntry = PENALTY_TABLE.find(p => advanceDays >= p.days);
+            const penaltyPercent = penaltyEntry ? penaltyEntry.penalty : 0;
+            scores.gridRaw = isDisqualified ? 0 : gridBaseScore * (1 - (penaltyPercent * 0.75));
+            scores.gridFinal = scores.gridRaw * WEIGHTS.grid;
+
+            // Capacity Score
+            scores.capacityRaw = maxValues.maxOfferedCapacity > 0 ? (bidder.capacity / maxValues.maxOfferedCapacity) * 100 : 0;
+            scores.capacityFinal = scores.capacityRaw * WEIGHTS.capacity;
+            
+            // Final Score
+            scores.total = isDisqualified ? 0 : scores.priceFinal + scores.dcdFinal + scores.gridFinal + scores.capacityFinal;
+            scores.isDisqualified = isDisqualified;
+
+            return scores;
+        };
+        
+        const calculateAndRankBids = () => {
+            if (bidders.length === 0) {
+                updateUI([], 0);
+                return;
+            }
+            
+            const sharedDetails = {
+                foundationType: dom.foundationType.value,
+                dcd: dom.dcd.value,
+                gridReadinessLevel: dom.gridReadinessLevel.value,
+                gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value
+            };
+            
+            // Pre-calculation to find max values
+            let highestGearRatio = 0;
+            let maxOfferedCapacity = 0;
+            const gearPrice = GEAR_PRICES[sharedDetails.foundationType];
+
+            bidders.forEach(bid => {
+                if (bid.price <= gearPrice && bid.price > 0) {
+                    highestGearRatio = Math.max(highestGearRatio, gearPrice / bid.price);
+                }
+                maxOfferedCapacity = Math.max(maxOfferedCapacity, bid.capacity);
+            });
+            
+            // Final calculation with normalization
+            const scoredBidders = bidders.map(bid => {
+                const scores = calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity });
+                return { ...bid, ...scores };
             });
 
-            if (dcdScoreEntry) {
-                dcdRawScore = dcdScoreEntry.score;
-                dcdDiscussionText = `The proposed DCD falls within the ${dcdScoreEntry.start} to ${dcdScoreEntry.end} range, earning a raw score of ${dcdRawScore}.`;
-            } else {
-                if (!isDisqualified) {
-                    isDisqualified = true;
-                    disqualificationReason = 'DCD is outside the allowed scoring range.';
-                }
-                dcdRawScore = 0;
-                dcdDiscussionText = 'The DCD is outside the scorable date ranges, resulting in disqualification.';
-            }
-            const dcdFinalScore = dcdRawScore * WEIGHTS.dcd;
-            if (!isDisqualified) totalScore += dcdFinalScore;
+            const rankedBidders = scoredBidders.sort((a, b) => b.total - a.total);
 
-            // 3. Grid Readiness Calculation
-            const gridLevel = parseInt(inputs.gridReadinessLevel.value);
-            let gridBaseScore = GRID_SCORE_TABLE[gridLevel];
-            let gridRawScore = 0;
-            let gridDiscussionText = '';
+            // Awarding Logic
+            let remainingTarget = parseFloat(dom.installationTarget.value) || 0;
+            const marginalCap = parseFloat(dom.marginalCap.value) || 0;
+            let marginalBidderFound = false;
 
-            if (gridBaseScore === 'Disqualified') {
-                 if (!isDisqualified) {
-                    isDisqualified = true;
-                    disqualificationReason = 'Grid Readiness Level is 0.';
-                }
-                gridRawScore = 0;
-                gridDiscussionText = 'Grid Readiness Level 0 results in disqualification.';
-            } else {
-                const gridDate = new Date(inputs.gridFacilityReadinessDate.value);
-                const advanceDays = Math.max(0, Math.ceil((gridDate - dcdDate) / (1000 * 60 * 60 * 24) * -1));
-                
-                let penaltyPercent = 0;
-                const penaltyEntry = PENALTY_TABLE.find(p => advanceDays >= p.days);
-                if (penaltyEntry) {
-                    penaltyPercent = penaltyEntry.penalty;
+            rankedBidders.forEach(bid => {
+                if (bid.isDisqualified) {
+                    bid.awardStatus = 'Disqualified';
+                    bid.awardedMW = 0;
+                    return;
                 }
                 
-                const maxPenaltyPercentage = 0.75;
-                const finalPenaltyMultiplier = penaltyPercent * maxPenaltyPercentage;
-                
-                gridRawScore = gridBaseScore * (1 - finalPenaltyMultiplier);
-                gridDiscussionText = `A base score of ${gridBaseScore} is given for Level ${gridLevel}. `;
-                if (advanceDays > 0) {
-                    gridDiscussionText += `A penalty of ${(finalPenaltyMultiplier * 100).toFixed(2)}% is applied because the DCD is ${advanceDays} days earlier than the grid readiness date.`;
+                if (remainingTarget > 0 && !marginalBidderFound) {
+                    if (bid.capacity <= remainingTarget) {
+                        bid.awardStatus = 'Winner';
+                        bid.awardedMW = bid.capacity;
+                        remainingTarget -= bid.capacity;
+                    } else {
+                        bid.awardStatus = 'Marginal';
+                        bid.awardedMW = Math.min(bid.capacity, remainingTarget + marginalCap);
+                        remainingTarget = 0;
+                        marginalBidderFound = true;
+                    }
                 } else {
-                    gridDiscussionText += `No penalty is applied.`;
+                    bid.awardStatus = 'Loser';
+                    bid.awardedMW = 0;
+                }
+            });
+
+            updateUI(rankedBidders, highestGearRatio);
+        };
+        
+        const updateUI = (rankedBidders, highestGearRatio = 0) => {
+            dom.gearPrice.textContent = `₱${GEAR_PRICES[dom.foundationType.value].toFixed(2)}`;
+            dom.highestGearRatioValue.textContent = highestGearRatio.toFixed(3);
+            
+            // Update Bidders List
+            dom.biddersListContainer.innerHTML = rankedBidders.map((bid, index) => generateBidderHTML(bid, index)).join('');
+            
+            // Update Ranking Table
+            dom.rankingTableBody.innerHTML = rankedBidders.map((bid, index) => generateRankingRowHTML(bid, index)).join('');
+        };
+
+        // --- HTML GENERATORS ---
+        const generateBidderHTML = (bidder, index) => {
+            const isFirstBidder = bidders[0] && bidder.id === bidders[0].id;
+            const bgColor = bidder.isDisqualified ? 'bg-red-50' : (isFirstBidder ? 'bg-blue-50' : 'bg-gray-50');
+            return `
+                <div class="border rounded-lg p-3 ${bgColor}">
+                    <div class="grid grid-cols-6 gap-2 items-center text-sm">
+                        <div class="col-span-2 font-semibold text-gray-800">
+                            ${isFirstBidder ? '★' : ''} ${index + 1}. ${bidder.name}
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-500">Price</span>
+                            ₱${bidder.price.toFixed(2)}
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs text-gray-500">Capacity</span>
+                            ${bidder.capacity} MW
+                        </div>
+                         <div class="text-center font-bold text-blue-600">
+                            <span class="block text-xs text-gray-500 font-medium">Score</span>
+                            ${bidder.total.toFixed(2)}
+                        </div>
+                        <div class="text-right">
+                             <button onclick="toggleDetails('${bidder.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-2 rounded">Details</button>
+                             <button onclick="removeBidder('${bidder.id}')" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">&times;</button>
+                        </div>
+                    </div>
+                    <div id="details-${bidder.id}" class="details-section">
+                        ${generateScoreBreakdownHTML(bidder)}
+                    </div>
+                </div>`;
+        };
+        
+        const generateScoreBreakdownHTML = (bidder) => {
+             if (!bidder) return '';
+             const gearPrice = GEAR_PRICES[dom.foundationType.value];
+             return `
+                <div class="text-center mb-2 p-2 bg-white rounded-md border">
+                    <p class="font-semibold text-sm">GEAR Ratio: <span class="text-blue-600">${bidder.gearRatio.toFixed(3)}</span></p>
+                    <p class="text-xs text-gray-500">Benchmark (₱${gearPrice.toFixed(2)}) / Offered Price (₱${bidder.price.toFixed(2)})</p>
+                </div>
+                <table class="w-full text-left text-xs">
+                    <thead><tr class="border-b"><th class="py-1">Criterion</th><th class="text-center">Raw</th><th class="text-center">Final</th></tr></thead>
+                    <tbody>
+                        <tr><td>Price</td><td class="text-center">${bidder.priceRaw.toFixed(2)}</td><td class="text-center">${bidder.priceFinal.toFixed(2)}</td></tr>
+                        <tr class="bg-white"><td>DCD</td><td class="text-center">${bidder.dcdRaw.toFixed(2)}</td><td class="text-center">${bidder.dcdFinal.toFixed(2)}</td></tr>
+                        <tr><td>Grid</td><td class="text-center">${bidder.gridRaw.toFixed(2)}</td><td class="text-center">${bidder.gridFinal.toFixed(2)}</td></tr>
+                        <tr class="bg-white"><td>Capacity</td><td class="text-center">${bidder.capacityRaw.toFixed(2)}</td><td class="text-center">${bidder.capacityFinal.toFixed(2)}</td></tr>
+                    </tbody>
+                </table>`;
+        };
+
+        const generateRankingRowHTML = (bid, index) => {
+            let statusClass = '';
+            if (bid.awardStatus === 'Winner' || bid.awardStatus === 'Marginal') statusClass = 'text-green-600';
+            else if (bid.awardStatus === 'Loser') statusClass = 'text-red-600';
+            return `
+                <tr class="border-b">
+                    <td class="py-2">${index + 1}</td>
+                    <td class="py-2 font-medium">${bid.name} ${bid.id === bidders[0].id ? '★' : ''}</td>
+                    <td class="py-2 text-center">${bid.total.toFixed(2)}</td>
+                    <td class="py-2 text-center">${bid.awardedMW}</td>
+                    <td class="py-2 text-center font-semibold ${statusClass}">${bid.awardStatus}</td>
+                </tr>`;
+        };
+        
+        // --- EVENT HANDLERS & INITIALIZATION ---
+        const addBidder = () => {
+            // Clear previous errors
+            dom.bidderNameSelect.classList.remove('border-red-500');
+            dom.otherBidderName.classList.remove('border-red-500');
+            dom.competitorPrice.classList.remove('border-red-500');
+            dom.competitorCapacity.classList.remove('border-red-500');
+            dom.addBidderError.textContent = '';
+
+            const selectedName = dom.bidderNameSelect.value;
+            const name = selectedName === 'other' ? dom.otherBidderName.value.trim() : selectedName;
+            const price = parseFloat(dom.competitorPrice.value);
+            const capacity = parseInt(dom.competitorCapacity.value);
+            
+            let errors = [];
+            if (!name) {
+                errors.push('name');
+                if (selectedName === 'other') {
+                    dom.otherBidderName.classList.add('border-red-500');
+                } else {
+                    dom.bidderNameSelect.classList.add('border-red-500');
                 }
             }
-            const gridFinalScore = gridRawScore * WEIGHTS.grid;
-            if (!isDisqualified) totalScore += gridFinalScore;
-            
-            // 4. Offer Capacity Calculation
-            const offeredCapacity = parseFloat(inputs.offeredCapacity.value);
-            const maxOfferedCapacity = parseFloat(inputs.maxOfferedCapacity.value);
-            let capacityRawScore = 0;
-            let capacityDiscussionText = '';
-            if (maxOfferedCapacity > 0) {
-                capacityRawScore = (offeredCapacity / maxOfferedCapacity) * 100;
-                capacityDiscussionText = `The offered capacity of ${offeredCapacity} MW is ${capacityRawScore.toFixed(2)}% of the maximum offered capacity (${maxOfferedCapacity} MW), resulting in a raw score of ${capacityRawScore.toFixed(2)}.`;
-            } else {
-                 capacityDiscussionText = `Max offered capacity must be greater than zero.`;
+            if (isNaN(price) || dom.competitorPrice.value.trim() === '') {
+                errors.push('price');
+                dom.competitorPrice.classList.add('border-red-500');
             }
-            const capacityFinalScore = capacityRawScore * WEIGHTS.capacity;
-            if (!isDisqualified) totalScore += capacityFinalScore;
-
-            // 5. OSW Infrastructure (Informational)
-            const portType = inputs.portType.value;
-            if (portType === 'PPA') {
-                outputs.portImplication.textContent = 'Eligible for PPA port queuing based on score.';
-            } else {
-                outputs.portImplication.textContent = 'Requires independent arrangements with a private port.';
+            if (isNaN(capacity) || dom.competitorCapacity.value.trim() === '') {
+                errors.push('capacity');
+                dom.competitorCapacity.classList.add('border-red-500');
             }
 
-            // --- UPDATE UI ---
-            outputs.gearPrice.textContent = `₱${gearPrice.toFixed(2)}`;
-            
-            outputs.priceRawScore.textContent = isDisqualified && disqualificationReason.startsWith('Price') ? 'DQ' : priceRawScore.toFixed(2);
-            outputs.priceFinalScore.textContent = isDisqualified ? '0.00' : priceFinalScore.toFixed(2);
-
-            outputs.dcdRawScore.textContent = isDisqualified && disqualificationReason.startsWith('DCD') ? 'DQ' : dcdRawScore.toFixed(2);
-            outputs.dcdFinalScore.textContent = isDisqualified ? '0.00' : dcdFinalScore.toFixed(2);
-
-            outputs.gridRawScore.textContent = isDisqualified && disqualificationReason.startsWith('Grid') ? 'DQ' : gridRawScore.toFixed(2);
-            outputs.gridFinalScore.textContent = isDisqualified ? '0.00' : gridFinalScore.toFixed(2);
-
-            outputs.capacityRawScore.textContent = isDisqualified ? 'N/A' : capacityRawScore.toFixed(2);
-            outputs.capacityFinalScore.textContent = isDisqualified ? '0.00' : capacityFinalScore.toFixed(2);
-
-            outputs.totalScore.textContent = isDisqualified ? '0.00' : totalScore.toFixed(2);
-            outputs.disqualificationReason.textContent = isDisqualified ? disqualificationReason : '';
-            
-            outputs.priceDiscussion.textContent = isDisqualified ? 'N/A' : priceDiscussionText;
-            outputs.dcdDiscussion.textContent = isDisqualified ? 'N/A' : dcdDiscussionText;
-            outputs.gridDiscussion.textContent = isDisqualified ? 'N/A' : gridDiscussionText;
-            outputs.capacityDiscussion.textContent = isDisqualified ? 'N/A' : capacityDiscussionText;
-
-
-            if (isDisqualified) {
-                outputs.finalStatus.textContent = 'Disqualified';
-                outputs.finalStatus.classList.remove('qualified');
-                outputs.finalStatus.classList.add('disqualified');
-                outputs.priceDiscussion.textContent = priceDiscussionText;
-                if(disqualificationReason.startsWith('DCD')) outputs.dcdDiscussion.textContent = dcdDiscussionText;
-                if(disqualificationReason.startsWith('Grid')) outputs.gridDiscussion.textContent = gridDiscussionText;
+            if (errors.length > 0) {
+                dom.addBidderError.textContent = `Please provide a valid ${errors.join(', ')}.`;
             } else {
-                outputs.finalStatus.textContent = 'Qualified';
-                outputs.finalStatus.classList.remove('disqualified');
-                outputs.finalStatus.classList.add('qualified');
+                bidders.push({ id: `bid_${Date.now()}`, name, price, capacity });
+                dom.otherBidderName.value = '';
+                dom.bidderNameSelect.selectedIndex = 0;
+                handleBidderSelectChange(); // Reset to first bidder's capacity
+                calculateAndRankBids();
             }
-        }
-
-        // --- EVENT LISTENERS ---
-        calculateBtn.addEventListener('click', calculateScores);
+        };
         
-        // Initial calculation on page load
-        window.addEventListener('load', calculateScores);
+        const handleBidderSelectChange = () => {
+            const selectedValue = dom.bidderNameSelect.value;
+            if (selectedValue === 'other') {
+                dom.otherBidderName.style.display = 'block';
+                dom.competitorCapacity.value = ''; // Clear capacity for custom entry
+            } else {
+                dom.otherBidderName.style.display = 'none';
+                const selectedBidder = PRESET_BIDDERS.find(b => b.name === selectedValue);
+                if (selectedBidder) {
+                    dom.competitorCapacity.value = selectedBidder.capacity;
+                }
+            }
+        };
+
+        window.removeBidder = (id) => {
+            bidders = bidders.filter(b => b.id !== id);
+            calculateAndRankBids();
+        };
+
+        window.toggleDetails = (id) => {
+            const detailsEl = document.getElementById(`details-${id}`);
+            if (detailsEl) {
+                detailsEl.style.display = detailsEl.style.display === 'block' ? 'none' : 'block';
+            }
+        };
+
+        const init = () => {
+            // Populate Bidder Dropdown
+            PRESET_BIDDERS.forEach(bidder => {
+                const option = document.createElement('option');
+                option.value = bidder.name;
+                option.textContent = bidder.name;
+                dom.bidderNameSelect.appendChild(option);
+            });
+            const otherOption = document.createElement('option');
+            otherOption.value = 'other';
+            otherOption.textContent = '-- Other --';
+            dom.bidderNameSelect.appendChild(otherOption);
+
+            dom.addBidderBtn.addEventListener('click', addBidder);
+            dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
+
+            document.querySelectorAll('.input, .select').forEach(el => {
+                el.addEventListener('input', calculateAndRankBids);
+            });
+
+            // Populate Legend Tables
+            PENALTY_TABLE.slice().reverse().forEach(p => {
+                const row = dom.penaltyTableBody.insertRow();
+                row.innerHTML = `<td>≥ ${p.days}</td><td>${(p.penalty * 100).toFixed(2)}%</td>`;
+            });
+            DCD_SCORING_TABLE.forEach(d => {
+                 const row = dom.dcdScoringTableBody.insertRow();
+                 row.innerHTML = `<td>${d.score}</td><td>${new Date(d.start+'T00:00:00').toLocaleDateString()}</td><td>${new Date(d.end+'T00:00:00').toLocaleDateString()}</td>`;
+            });
+            
+            handleBidderSelectChange(); // Set initial capacity
+            calculateAndRankBids();
+        };
+
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
+
+
