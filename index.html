@@ -408,7 +408,19 @@
             dom.biddersListContainer.innerHTML = rankedBidders.map((bid, index) => generateBidderHTML(bid, index)).join('');
             
             // Update Ranking Table
-            dom.rankingTableBody.innerHTML = rankedBidders.map((bid, index) => generateRankingRowHTML(bid, index)).join('');
+            let rankingHTML = rankedBidders.map((bid, index) => generateRankingRowHTML(bid, index)).join('');
+            const blankRowCount = Math.max(0, 5 - rankedBidders.length);
+            for (let i = 0; i < blankRowCount; i++) {
+                rankingHTML += `
+                    <tr class="border-b h-10">
+                        <td class="py-2 text-gray-400">${rankedBidders.length + i + 1}</td>
+                        <td class="text-gray-400">-</td>
+                        <td class="text-center text-gray-400">-</td>
+                        <td class="text-center text-gray-400">-</td>
+                        <td class="text-center text-gray-400">-</td>
+                    </tr>`;
+            }
+            dom.rankingTableBody.innerHTML = rankingHTML;
         };
 
         // --- HTML GENERATORS ---
@@ -419,7 +431,7 @@
                 <div class="border rounded-lg p-3 ${bgColor}">
                     <div class="grid grid-cols-6 gap-2 items-center text-sm">
                         <div class="col-span-2 font-semibold text-gray-800">
-                            ${isFirstBidder ? '★' : ''} ${index + 1}. ${bidder.name}
+                            ${index + 1}. ${bidder.name}
                         </div>
                         <div class="text-center">
                             <span class="block text-xs text-gray-500">Price</span>
@@ -470,7 +482,7 @@
             return `
                 <tr class="border-b">
                     <td class="py-2">${index + 1}</td>
-                    <td class="py-2 font-medium">${bid.name} ${bid.id === bidders[0].id ? '★' : ''}</td>
+                    <td class="py-2 font-medium">${bid.name}</td>
                     <td class="py-2 text-center">${bid.total.toFixed(2)}</td>
                     <td class="py-2 text-center">${bid.awardedMW}</td>
                     <td class="py-2 text-center font-semibold ${statusClass}">${bid.awardStatus}</td>
