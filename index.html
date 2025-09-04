@@ -162,7 +162,7 @@
                     </div>
                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button id="addBidderBtn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Bidder</button>
-                        <button id="predictBidsBtn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Load Predicted Bids</button>
+                        <button id="simulateBidsBtn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Load Simulated Bids</button>
                         <button id="clearBidsBtn" class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">Clear Bidders</button>
                     </div>
                     <div id="addBidderError" class="text-red-600 text-sm mt-2"></div>
@@ -354,7 +354,7 @@
             competitorPriceMin: document.getElementById('competitorPriceMin'), competitorPriceMax: document.getElementById('competitorPriceMax'),
             competitorPriceMostLikely: document.getElementById('competitorPriceMostLikely'),
             competitorCapacity: document.getElementById('competitorCapacity'), addBidderBtn: document.getElementById('addBidderBtn'),
-            predictBidsBtn: document.getElementById('predictBidsBtn'),
+            simulateBidsBtn: document.getElementById('simulateBidsBtn'),
             clearBidsBtn: document.getElementById('clearBidsBtn'),
             addBidderError: document.getElementById('addBidderError'), biddersListContainer: document.getElementById('biddersListContainer'),
             foundationType: document.getElementById('foundationType'), 
@@ -591,7 +591,7 @@
             ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].classList.remove('border-red-500'));
 
             const selectedName = dom.bidderNameSelect.value;
-            const name = selectedName === 'other' ? dom.otherBidderName.value.trim() : selectedName;
+            const baseName = selectedName === 'other' ? dom.otherBidderName.value.trim() : selectedName;
             const priceMin = parseFloat(dom.competitorPriceMin.value);
             const priceMostLikely = dom.competitorPriceMostLikely.value ? parseFloat(dom.competitorPriceMostLikely.value) : null;
             const priceMax = dom.competitorPriceMax.value ? parseFloat(dom.competitorPriceMax.value) : null;
@@ -605,7 +605,10 @@
                 return;
             }
 
-            if (name && !isNaN(priceMin) && !isNaN(capacity)) {
+            if (baseName && !isNaN(priceMin) && !isNaN(capacity)) {
+                const existingCount = bidders.filter(b => b.name.startsWith(baseName)).length;
+                const name = existingCount > 0 ? `${baseName} Lot ${existingCount + 1}` : baseName;
+
                 bidders.push({ id: `bid_${Date.now()}`, name, priceMin, priceMostLikely, priceMax, capacity });
                 dom.otherBidderName.value = '';
                 ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].value = '');
@@ -629,23 +632,32 @@
             }
         };
 
-        const predictBids = () => {
-            const predictedBidders = [
-                { name: 'CIP & ACEN Corporation', priceMin: 11.20, priceMostLikely: 11.40, priceMax: 11.60, capacity: 1000 },
-                { name: 'San Miguel Corporation', priceMin: 10.90, priceMostLikely: 11.10, priceMax: 11.30, capacity: 800 },
-                { name: 'Corio Generation', priceMin: 11.15, priceMostLikely: 11.35, priceMax: 11.55, capacity: 600 },
-                { name: 'Triconti Windkraft Group', priceMin: 11.25, priceMostLikely: 11.45, priceMax: 11.65, capacity: 450 },
-                { name: 'Aboitiz Power Corp.', priceMin: 11.30, priceMostLikely: 11.50, priceMax: 11.70, capacity: 500 },
-                { name: 'The Lopez Group (First Gen)', priceMin: 11.35, priceMostLikely: 11.55, priceMax: 11.75, capacity: 400 },
-                { name: 'CleanTech & The Blue Circle', priceMin: 11.40, priceMostLikely: 11.60, priceMax: 11.80, capacity: 1200 },
-                { name: 'BlueFloat Energy', priceMin: 11.45, priceMostLikely: 11.65, priceMax: 11.85, capacity: 750 }
+        const simulateBids = () => {
+             bidders = []; // Clear existing bidders
+            const simulatedBiddersList = [
+                { name: 'CIP & ACEN Corporation', capacity: 1000 },
+                { name: 'San Miguel Corporation', capacity: 800 },
+                { name: 'Corio Generation', capacity: 600 },
+                { name: 'Triconti Windkraft Group', capacity: 450 },
+                { name: 'Aboitiz Power Corp.', capacity: 500 },
+                { name: 'The Lopez Group (First Gen)', capacity: 400 },
+                { name: 'CleanTech & The Blue Circle', capacity: 1200 },
+                { name: 'BlueFloat Energy', capacity: 750 }
             ];
 
-            predictedBidders.forEach(pBid => {
-                // Avoid adding duplicates
-                if (!bidders.some(b => b.name === pBid.name)) {
-                    bidders.push({ ...pBid, id: `bid_${Date.now()}_${Math.random()}` });
-                }
+            simulatedBiddersList.forEach(pBid => {
+                const basePrice = 10.90 + Math.random() * 0.8; // Random base between 10.90 and 11.70
+                const priceMostLikely = parseFloat(basePrice.toFixed(2));
+                const priceMin = parseFloat((priceMostLikely - (0.1 + Math.random() * 0.15)).toFixed(2));
+                const priceMax = parseFloat((priceMostLikely + (0.1 + Math.random() * 0.15)).toFixed(2));
+
+                bidders.push({ 
+                    ...pBid, 
+                    id: `bid_${Date.now()}_${Math.random()}`,
+                    priceMin,
+                    priceMostLikely,
+                    priceMax
+                });
             });
 
             calculateAndRender();
@@ -830,7 +842,7 @@
 
             document.querySelectorAll('.input, .select').forEach(el => el.addEventListener('input', calculateAndRender));
             dom.addBidderBtn.addEventListener('click', addBidder);
-            dom.predictBidsBtn.addEventListener('click', predictBids);
+            dom.simulateBidsBtn.addEventListener('click', simulateBids);
             dom.clearBidsBtn.addEventListener('click', clearBidders);
             dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
             dom.exportCsvBtn.addEventListener('click', exportToCsv);
