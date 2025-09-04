@@ -344,6 +344,37 @@
                     <div id="monteCarloDiscussion" class="mt-4 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg" style="display: none;"></div>
                 </div>
 
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Advanced Strategic Analysis</h2>
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">Score Contribution Analysis</h3>
+                    <p class="text-sm text-gray-600 mb-4">Visually compare the strengths and weaknesses of each bidder by seeing how their final score is composed across the four main criteria.</p>
+                    <div>
+                        <canvas id="scoreContributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">Sensitivity Analysis</h3>
+                    <p class="text-sm text-gray-600 mb-4">Analyze how a bidder's final rank changes as key variables are adjusted. This helps identify critical thresholds and strategic opportunities.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label for="sensitivityBidderSelect" class="label text-sm">Bidder to Analyze</label>
+                            <select id="sensitivityBidderSelect" class="input"></select>
+                        </div>
+                        <div>
+                            <label for="sensitivityVariableSelect" class="label text-sm">Variable to Test</label>
+                            <select id="sensitivityVariableSelect" class="input">
+                                <option value="price">Bid Price</option>
+                                <option value="dcd">DCD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="runSensitivityBtn" class="mt-4 w-full bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-purple-700">Run Sensitivity Analysis</button>
+                    <div class="mt-4">
+                        <canvas id="sensitivityChart"></canvas>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Output Section -->
@@ -449,6 +480,8 @@
         // --- GLOBAL STATE ---
         let bidders = [];
         let rankedBiddersCache = [];
+        let scoreChart = null;
+        let sensitivityChart = null;
         
         // --- DOM ELEMENTS ---
         const dom = {
@@ -474,6 +507,9 @@
             gridLegendCard: document.getElementById('gridLegendCard'),
             chineseTurbineToggle: document.getElementById('chineseTurbineToggle'),
             jobEstimationResults: document.getElementById('job-estimation-results'),
+            sensitivityBidderSelect: document.getElementById('sensitivityBidderSelect'),
+            sensitivityVariableSelect: document.getElementById('sensitivityVariableSelect'),
+            runSensitivityBtn: document.getElementById('runSensitivityBtn'),
         };
         
         // --- CORE LOGIC ---
@@ -485,7 +521,7 @@
         const calculateScoresForBidder = (bidder, sharedDetails, maxValues) => {
              const scores = {}; let isDisqualified = false;
              const gearPrice = getGearPrices()[sharedDetails.foundationType];
-             const priceToScore = bidder.priceMin;
+             const priceToScore = bidder.price || bidder.priceMin;
              if (priceToScore > gearPrice) { isDisqualified = true; }
              const gearRatio = priceToScore > 0 ? gearPrice / priceToScore : 0;
              scores.gearRatio = gearRatio;
@@ -514,31 +550,53 @@
         };
 
         const runFullAuction = (currentBidders, sharedDetails) => {
-            if (currentBidders.length === 0) return { rankedBidders: [], highestGearRatio: 0 };
-            let highestGearRatio = 0; let maxOfferedCapacity = 0;
+            const activeBidders = currentBidders.filter(b => b.enabled);
+            if (activeBidders.length === 0) return { rankedBidders: [], highestGearRatio: 0 };
+            
+            let highestGearRatio = 0; 
+            let maxOfferedCapacity = 0;
             const gearPrice = getGearPrices()[sharedDetails.foundationType];
-            currentBidders.forEach(bid => {
-                const price = bid.priceMin;
+
+            activeBidders.forEach(bid => {
+                const price = bid.price || bid.priceMin;
                 if (price <= gearPrice && price > 0) { highestGearRatio = Math.max(highestGearRatio, gearPrice / price); }
                 maxOfferedCapacity = Math.max(maxOfferedCapacity, bid.capacity);
             });
-            const scoredBidders = currentBidders.map(bid => ({ ...bid, price: bid.priceMin, ...calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity }) }));
+
+            const scoredBidders = activeBidders.map(bid => ({ ...bid, ...calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity }) }));
             const rankedBidders = scoredBidders.sort((a, b) => b.total - a.total);
+
             let remainingTarget = parseFloat(dom.installationTarget.value) || 0;
             const marginalCap = parseFloat(dom.marginalCap.value) || 0;
             let marginalBidderFound = false;
+            
             rankedBidders.forEach(bid => {
-                if (bid.isDisqualified) { bid.awardStatus = 'Disqualified'; bid.awardedMW = 0; return; }
+                if (bid.isDisqualified) { 
+                    bid.awardStatus = 'Disqualified'; 
+                    bid.awardedMW = 0; 
+                    return; 
+                }
                 if (remainingTarget > 0 && !marginalBidderFound) {
-                    if (bid.capacity <= remainingTarget) { bid.awardStatus = 'Winner'; bid.awardedMW = bid.capacity; remainingTarget -= bid.capacity; }
-                    else { bid.awardStatus = 'Marginal'; bid.awardedMW = Math.min(bid.capacity, remainingTarget + marginalCap); remainingTarget = 0; marginalBidderFound = true; }
-                } else { bid.awardStatus = 'Loser'; bid.awardedMW = 0; }
+                    if (bid.capacity <= remainingTarget) { 
+                        bid.awardStatus = 'Winner'; 
+                        bid.awardedMW = bid.capacity; 
+                        remainingTarget -= bid.capacity; 
+                    } else { 
+                        bid.awardStatus = 'Marginal'; 
+                        bid.awardedMW = Math.min(bid.capacity, remainingTarget + marginalCap); 
+                        remainingTarget = 0; 
+                        marginalBidderFound = true; 
+                    }
+                } else { 
+                    bid.awardStatus = 'Loser'; 
+                    bid.awardedMW = 0; 
+                }
             });
+
             return { rankedBidders, highestGearRatio };
         };
         
         const validateInputs = () => {
-            // GEAR Price Validation
             const monopilePrice = parseFloat(dom.monopileGearPrice.value);
             const jacketPrice = parseFloat(dom.jacketGearPrice.value);
             if (!isNaN(monopilePrice) && !isNaN(jacketPrice) && jacketPrice < monopilePrice) {
@@ -554,7 +612,7 @@
             validateInputs();
             const sharedDetails = { 
                 foundationType: dom.foundationType.value, 
-                dcd: dom.dcd.value, // This is the default for manual bids
+                dcd: dom.dcd.value,
                 gridReadinessLevel: dom.gridReadinessLevel.value, 
                 gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value 
             };
@@ -562,12 +620,16 @@
             rankedBiddersCache = rankedBidders;
             updateUI(rankedBidders, highestGearRatio);
             updateJobEstimation(rankedBidders);
+            updateScoreContributionChart(rankedBidders);
         };
         
         // --- UI UPDATE ---
         const updateUI = (rankedBidders, highestGearRatio) => {
             dom.highestGearRatioValue.textContent = highestGearRatio.toFixed(3);
-            dom.biddersListContainer.innerHTML = rankedBidders.map((bid, index) => generateBidderHTML(bid, index)).join('');
+            dom.biddersListContainer.innerHTML = bidders.map(bid => {
+                const rankedBid = rankedBidders.find(rb => rb.id === bid.id) || bid;
+                return generateBidderHTML(rankedBid, rankedBidders.indexOf(rankedBid));
+            }).join('');
             
             let rankingHTML = rankedBidders.map((bid, index) => generateRankingRowHTML(bid, index)).join('');
             const blankRowCount = Math.max(0, 5 - rankedBidders.length);
@@ -575,7 +637,7 @@
                 rankingHTML += `<tr class="border-b h-10"><td class="py-2 text-gray-400">${rankedBidders.length + i + 1}</td><td class="text-gray-400">-</td><td class="text-center text-gray-400">-</td><td class="text-center text-gray-400">-</td><td class="text-center text-gray-400">-</td></tr>`;
             }
             dom.rankingTableBody.innerHTML = rankingHTML;
-            updateAnalysisBidderSelect();
+            updateBidderSelects();
         };
 
         const updateJobEstimation = (rankedBidders) => {
@@ -603,14 +665,14 @@
                     </div>
                 `;
             } else {
-                dom.jobEstimationResults.innerHTML = ''; // Clear it if no one won
+                dom.jobEstimationResults.innerHTML = '';
             }
         };
 
         // --- HTML GENERATORS ---
         const generateBidderHTML = (bidder, index) => {
-             const isFirstBidder = rankedBiddersCache[0] && bidder.id === rankedBiddersCache[0].id;
-             const bgColor = bidder.isDisqualified ? 'bg-red-50' : (isFirstBidder ? 'bg-blue-50' : 'bg-gray-50');
+             const isEnabled = bidder.enabled !== false;
+             const bgColor = !isEnabled ? 'bg-gray-200' : (bidder.isDisqualified ? 'bg-red-50' : (index === 0 ? 'bg-blue-50' : 'bg-gray-50'));
              
              let priceText = `₱${bidder.priceMin.toFixed(2)}`;
              if (bidder.priceMax) {
@@ -619,20 +681,23 @@
              const dcdText = bidder.dcd ? new Date(bidder.dcd + 'T00:00:00').toLocaleDateString() : 'Default';
 
              return `<div class="border rounded-lg p-3 ${bgColor}">
-                    <div class="grid grid-cols-7 gap-2 items-center text-sm">
-                        <div class="col-span-2 font-semibold text-gray-800">${index + 1}. ${bidder.name}</div>
+                    <div class="grid grid-cols-8 gap-2 items-center text-sm">
+                        <div class="col-span-3 font-semibold text-gray-800">
+                            <input type="checkbox" onchange="toggleBidder('${bidder.id}')" ${isEnabled ? 'checked' : ''} class="mr-2 h-4 w-4 align-middle">
+                            <span class="align-middle">${index >= 0 ? index + 1 + '.' : ''} ${bidder.name}</span>
+                        </div>
                         <div class="text-center text-xs"><span class="block text-gray-500">Price Range</span> ${priceText}</div>
                         <div class="text-center"><span class="block text-xs text-gray-500">Capacity</span> ${bidder.capacity} MW</div>
                         <div class="text-center text-xs"><span class="block text-gray-500">DCD</span> ${dcdText}</div>
-                        <div class="text-center font-bold text-blue-600"><span class="block text-xs text-gray-500 font-medium">Score</span> ${bidder.total.toFixed(2)}</div>
-                        <div class="text-right"><button onclick="toggleDetails('${bidder.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-2 rounded">Details</button> <button onclick="removeBidder('${bidder.id}')" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">&times;</button></div>
+                        <div class="text-center font-bold text-blue-600"><span class="block text-xs text-gray-500 font-medium">Score</span> ${bidder.total ? bidder.total.toFixed(2) : '-'}</div>
+                        <div class="text-right"><button onclick="toggleDetails('${bidder.id}')" class="text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-1 px-2 rounded">Details</button> <button onclick="removeBidder('${bidder.id}')" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">&times;</button></div>
                     </div>
                     <div id="details-${bidder.id}" class="details-section">${generateScoreBreakdownHTML(bidder)}</div>
                 </div>`;
         };
         
         const generateScoreBreakdownHTML = (bidder) => {
-             if (!bidder) return '';
+             if (!bidder || bidder.priceFinal === undefined) return 'Run simulation to see score breakdown.';
              return `<table class="w-full text-left text-xs">
                     <thead><tr class="border-b"><th class="py-1">Criterion</th><th class="text-center">Raw</th><th class="text-center">Final</th></tr></thead>
                     <tbody>
@@ -769,7 +834,8 @@
                     basePriceMax: priceMax,
                     priceMin: priceMin * discountFactor,
                     priceMax: priceMax ? priceMax * discountFactor : null,
-                    capacity 
+                    capacity,
+                    enabled: true,
                 });
                 dom.otherBidderName.value = '';
                 ['competitorPriceMin', 'competitorPriceMax'].forEach(id => dom[id].value = '');
@@ -836,7 +902,8 @@
                     basePriceMax: basePriceMax,
                     priceMin: basePriceMin * discountFactor,
                     priceMax: basePriceMax * discountFactor,
-                    dcd
+                    dcd,
+                    enabled: true,
                 });
             });
             
@@ -892,6 +959,14 @@
             bidders = [];
             dom.simulationExplainer.style.display = 'none';
             calculateAndRender();
+        };
+        
+        window.toggleBidder = (id) => {
+            const bidder = bidders.find(b => b.id === id);
+            if (bidder) {
+                bidder.enabled = !bidder.enabled;
+                calculateAndRender();
+            }
         };
 
         window.removeBidder = (id) => { 
@@ -982,7 +1057,7 @@
             let scoreGaps = [];
 
             for (let i = 0; i < iterations; i++) {
-                const simBidders = JSON.parse(JSON.stringify(bidders));
+                const simBidders = JSON.parse(JSON.stringify(bidders.filter(b => b.enabled)));
                 simBidders.forEach(bid => {
                     bid.price = bid.priceMin; // Use the base price for all
                     if (bid.id !== bidderId) {
@@ -1032,16 +1107,23 @@
             );
         };
 
-        const updateAnalysisBidderSelect = () => {
+        const updateBidderSelects = () => {
+            const activeBidders = bidders.filter(b => b.enabled);
             const currentMonteCarloId = dom.monteCarloBidderSelect.value;
-            dom.monteCarloBidderSelect.innerHTML = '';
-            bidders.forEach(bid => {
-                const option = document.createElement('option');
-                option.value = bid.id;
-                option.textContent = bid.name;
-                dom.monteCarloBidderSelect.appendChild(option);
+            const currentSensitivityId = dom.sensitivityBidderSelect.value;
+            
+            [dom.monteCarloBidderSelect, dom.sensitivityBidderSelect].forEach(select => {
+                select.innerHTML = '';
+                activeBidders.forEach(bid => {
+                    const option = document.createElement('option');
+                    option.value = bid.id;
+                    option.textContent = bid.name;
+                    select.appendChild(option);
+                });
             });
-             dom.monteCarloBidderSelect.value = currentMonteCarloId || (bidders[0] ? bidders[0].id : '');
+
+             dom.monteCarloBidderSelect.value = currentMonteCarloId || (activeBidders[0] ? activeBidders[0].id : '');
+             dom.sensitivityBidderSelect.value = currentSensitivityId || (activeBidders[0] ? activeBidders[0].id : '');
         };
         
         // --- MAP INITIALIZATION ---
@@ -1080,6 +1162,136 @@
                 allBlades.forEach(blades => blades.classList.remove('fast-spin'));
             }, 3000);
         };
+        
+        const updateScoreContributionChart = (rankedBidders) => {
+            const ctx = document.getElementById('scoreContributionChart').getContext('2d');
+            if (scoreChart) {
+                scoreChart.destroy();
+            }
+            scoreChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: rankedBidders.map(b => b.name),
+                    datasets: [
+                        { label: 'Price Score', data: rankedBidders.map(b => b.priceFinal), backgroundColor: 'rgba(59, 130, 246, 0.7)' },
+                        { label: 'DCD Score', data: rankedBidders.map(b => b.dcdFinal), backgroundColor: 'rgba(16, 185, 129, 0.7)' },
+                        { label: 'Grid Score', data: rankedBidders.map(b => b.gridFinal), backgroundColor: 'rgba(239, 68, 68, 0.7)' },
+                        { label: 'Capacity Score', data: rankedBidders.map(b => b.capacityFinal), backgroundColor: 'rgba(245, 158, 11, 0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Total Score' } }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        const runSensitivityAnalysis = () => {
+             const bidderId = dom.sensitivityBidderSelect.value;
+             const variable = dom.sensitivityVariableSelect.value;
+             const targetBidder = bidders.find(b => b.id === bidderId);
+             
+             if (!targetBidder) {
+                 alert("Please select a valid bidder to analyze.");
+                 return;
+             }
+             
+             const sharedDetails = {
+                foundationType: dom.foundationType.value,
+                dcd: dom.dcd.value,
+                gridReadinessLevel: dom.gridReadinessLevel.value,
+                gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value
+             };
+             
+             let analysisData = { labels: [], ranks: [] };
+             
+             if (variable === 'price') {
+                 for (let i = -10; i <= 10; i++) {
+                     const price = targetBidder.priceMin + (i * 0.05);
+                     if (price <= 0) continue;
+                     
+                     let tempBidders = JSON.parse(JSON.stringify(bidders));
+                     let tempTarget = tempBidders.find(b => b.id === bidderId);
+                     tempTarget.priceMin = price;
+                     
+                     const { rankedBidders } = runFullAuction(tempBidders, sharedDetails);
+                     const rank = rankedBidders.findIndex(b => b.id === bidderId) + 1;
+                     
+                     analysisData.labels.push(price.toFixed(2));
+                     analysisData.ranks.push(rank > 0 ? rank : rankedBidders.length + 1);
+                 }
+             } else if (variable === 'dcd') {
+                DCD_SCORING_TABLE.forEach(dcdEntry => {
+                    let tempBidders = JSON.parse(JSON.stringify(bidders));
+                    let tempTarget = tempBidders.find(b => b.id === bidderId);
+                    tempTarget.dcd = dcdEntry.start; // Use the start of the quarter for analysis
+
+                    const { rankedBidders } = runFullAuction(tempBidders, sharedDetails);
+                    const rank = rankedBidders.findIndex(b => b.id === bidderId) + 1;
+
+                    analysisData.labels.push(new Date(dcdEntry.start + 'T00:00:00').toLocaleDateString());
+                    analysisData.ranks.push(rank > 0 ? rank : rankedBidders.length + 1);
+                });
+             }
+             
+             updateSensitivityChart(analysisData, variable);
+        };
+
+        const updateSensitivityChart = (data, variable) => {
+            const ctx = document.getElementById('sensitivityChart').getContext('2d');
+            if (sensitivityChart) {
+                sensitivityChart.destroy();
+            }
+            sensitivityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Bidder Rank',
+                        data: data.ranks,
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            reverse: true, // Rank 1 at the top
+                            beginAtZero: false,
+                            min: 1,
+                            title: { display: true, text: 'Auction Rank' }
+                        },
+                        x: {
+                            title: { display: true, text: variable === 'price' ? 'Bid Price (PHP)' : 'Delivery Commencement Date' }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Rank Sensitivity to ${variable === 'price' ? 'Price' : 'DCD'}`
+                        }
+                    }
+                }
+            });
+        };
+
 
         // --- INIT ---
         const init = () => {
@@ -1097,6 +1309,7 @@
             dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
             dom.exportCsvBtn.addEventListener('click', exportToCsv);
             dom.runMonteCarloBtn.addEventListener('click', runMonteCarloAnalysis);
+            dom.runSensitivityBtn.addEventListener('click', runSensitivityAnalysis);
             dom.chineseTurbineToggle.addEventListener('change', handleTurbineToggle);
             
             // Turbine interaction
