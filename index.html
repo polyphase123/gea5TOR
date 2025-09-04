@@ -110,6 +110,16 @@
             visibility: visible;
             opacity: 1;
         }
+        .my-leaflet-tooltip {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 1px solid #9ca3af;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            box-shadow: none;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -799,8 +809,18 @@
 
             PRESET_BIDDERS.forEach(bidder => {
                 if(bidder.location) {
+                    let tooltipContent = `<b>${bidder.name}</b><br>${bidder.info}`;
+                    if (bidder.capacity) {
+                        tooltipContent += `<br><em>${bidder.capacity} MW</em>`;
+                    }
+
                     L.marker(bidder.location).addTo(map)
-                        .bindPopup(`<b>${bidder.name}</b><br>${bidder.info}`);
+                        .bindTooltip(tooltipContent, {
+                            permanent: true, 
+                            direction: 'top',
+                            offset: [0, -10],
+                            className: 'my-leaflet-tooltip'
+                        });
                 }
             });
         };
