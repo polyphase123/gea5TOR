@@ -592,7 +592,8 @@
              return `<tr class="border-b"><td class="py-2">${index + 1}</td><td class="py-2 font-medium">${bid.name}</td><td class="py-2 text-center">${bid.total.toFixed(2)}</td><td class="py-2 text-center">${bid.awardedMW}</td><td class="py-2 text-center font-semibold ${statusClass}">${bid.awardStatus}</td></tr>`;
         };
         
-        const generateMonteCarloDiscussion = (bidderName, probability, requiredPriceDrops, scoreGaps, sharedDetails) => {
+        const generateMonteCarloDiscussion = (bidderToAnalyze, probability, requiredPriceDrops, scoreGaps, sharedDetails) => {
+            const bidderName = bidderToAnalyze.name;
             let baseAdvice = '';
             if (probability < 30) {
                 baseAdvice = `To improve <strong>${bidderName}'s</strong> chances, significant bid improvements are needed.`;
@@ -603,11 +604,8 @@
             }
 
             let suggestionHtml = '';
-            if (probability < 99 && requiredPriceDrops.length > 0) {
-                const avgPriceDrop = requiredPriceDrops.reduce((a, b) => a + b, 0) / requiredPriceDrops.length;
+            if (probability < 99 && scoreGaps.length > 0) {
                 const avgScoreGap = scoreGaps.reduce((a, b) => a + b, 0) / scoreGaps.length;
-                
-                const bidderToAnalyze = bidders.find(b => b.name === bidderName);
                 const aDcd = bidderToAnalyze.dcd || sharedDetails.dcd;
 
                 // DCD Suggestion
@@ -642,6 +640,15 @@
                         gridSuggestion = `Improving Grid Readiness to <strong>Level ${nextLevel}</strong> would help but may not be enough on its own.`;
                     }
                 }
+
+                // Price Suggestion (now more robust)
+                let priceSuggestionText = '';
+                if (requiredPriceDrops.length > 0) {
+                    const avgPriceDrop = requiredPriceDrops.reduce((a, b) => a + b, 0) / requiredPriceDrops.length;
+                    priceSuggestionText = `A price reduction of approximately <strong class="text-lg">₱${avgPriceDrop.toFixed(2)}</strong> was a common path to winning in the simulations. This is the most direct lever.`;
+                } else {
+                    priceSuggestionText = `The required price reduction appears to be significant. Closing the average score gap of <strong>${avgScoreGap.toFixed(2)} points</strong> through pricing is the most direct strategy.`;
+                }
                 
                 suggestionHtml = `
                     <div class="mt-4 pt-3 border-t border-gray-300">
@@ -650,7 +657,7 @@
                         <div class="space-y-3 mt-3">
                             <div class="p-3 bg-white border border-gray-200 rounded-md">
                                 <p class="font-semibold text-blue-700">1. Adjust Bid Price</p>
-                                <p class="text-sm text-gray-700">A price reduction of approximately <strong class="text-lg">₱${avgPriceDrop.toFixed(2)}</strong> was the most common path to winning in the simulations. This is often the most direct lever to pull.</p>
+                                <p class="text-sm text-gray-700">${priceSuggestionText}</p>
                             </div>
                             <div class="p-3 bg-white border border-gray-200 rounded-md">
                                 <p class="font-semibold text-blue-700">2. Improve Project Timelines</p>
@@ -702,7 +709,7 @@
                 handleBidderSelectChange();
                 calculateAndRender();
             } else {
-                alert('Please provide a valid name, min price, and capacity.');
+                dom.addBidderError.textContent = 'Please provide a valid name, min price, and capacity.';
             }
         };
 
@@ -926,7 +933,7 @@
             dom.monteCarloResult.innerHTML = `Win Probability: <span class="text-teal-600">${winProbability.toFixed(2)}%</span>`;
             
             dom.monteCarloDiscussion.innerHTML = generateMonteCarloDiscussion(
-                bidderToAnalyze.name, probability, requiredPriceDrops, scoreGaps, sharedDetails
+                bidderToAnalyze, winProbability, requiredPriceDrops, scoreGaps, sharedDetails
             );
         };
 
@@ -1016,4 +1023,5 @@
     </script>
 </body>
 </html>
+
 
