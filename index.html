@@ -174,6 +174,20 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* Toggle Switch styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #2563eb; /* blue-600 */
+            transform: translateX(100%);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .toggle-checkbox {
+            transition: transform 0.2s ease-in-out;
+        }
+
     </style>
 </head>
 <body class="text-gray-800">
@@ -270,6 +284,14 @@
                                 </select>
                                 <span class="tooltip-text">The primary foundation type for the auction. This determines which GEAR price is used as the benchmark for disqualification.</span>
                             </div>
+                        </div>
+                        <div class="mt-6 tooltip-container flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium text-gray-700">Enable Chinese Turbines<span class="tooltip-icon">?</span></span>
+                             <div class="relative inline-block w-12 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="chineseTurbineToggle" id="chineseTurbineToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                <label for="chineseTurbineToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
+                             <span class="tooltip-text">Enabling this simulates a 32.5% cost reduction in GEAR prices and competitor bids, reflecting the use of cheaper turbines.</span>
                         </div>
                         <div id="gearPriceError" class="text-red-600 text-xs mt-2"></div>
                     </div>
@@ -420,6 +442,8 @@
             { name: 'Aboitiz Power Corp.', capacity: '', location: [15.4, 119.8], info: "Offshore Zambales" }, 
             { name: 'The Lopez Group (First Gen)', capacity: '', location: [11.2, 122.5], info: "Offshore Panay" }, 
         ];
+        const BASE_GEAR_PRICES = { Monopile: 12.00, Jacket: 12.10 };
+        const CHINESE_TURBINE_DISCOUNT = 0.325; // 32.5%
 
         // --- GLOBAL STATE ---
         let bidders = [];
@@ -447,6 +471,7 @@
             monteCarloDiscussion: document.getElementById('monteCarloDiscussion'),
             penaltyTableBody: document.getElementById('penaltyTableBody'), dcdScoringTableBody: document.getElementById('dcdScoringTableBody'),
             gridLegendCard: document.getElementById('gridLegendCard'),
+            chineseTurbineToggle: document.getElementById('chineseTurbineToggle'),
         };
         
         // --- CORE LOGIC ---
@@ -458,7 +483,7 @@
         const calculateScoresForBidder = (bidder, sharedDetails, maxValues) => {
              const scores = {}; let isDisqualified = false;
              const gearPrice = getGearPrices()[sharedDetails.foundationType];
-             const priceToScore = bidder.price || bidder.priceMin;
+             const priceToScore = bidder.priceMin;
              if (priceToScore > gearPrice) { isDisqualified = true; }
              const gearRatio = priceToScore > 0 ? gearPrice / priceToScore : 0;
              scores.gearRatio = gearRatio;
@@ -495,7 +520,7 @@
                 if (price <= gearPrice && price > 0) { highestGearRatio = Math.max(highestGearRatio, gearPrice / price); }
                 maxOfferedCapacity = Math.max(maxOfferedCapacity, bid.capacity);
             });
-            const scoredBidders = currentBidders.map(bid => ({ ...bid, ...calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity }) }));
+            const scoredBidders = currentBidders.map(bid => ({ ...bid, price: bid.priceMin, ...calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity }) }));
             const rankedBidders = scoredBidders.sort((a, b) => b.total - a.total);
             let remainingTarget = parseFloat(dom.installationTarget.value) || 0;
             const marginalCap = parseFloat(dom.marginalCap.value) || 0;
@@ -604,7 +629,7 @@
             }
 
             let suggestionHtml = '';
-            if (probability < 99 && scoreGaps.length > 0) {
+            if (probability < 99.99 && scoreGaps.length > 0) {
                 const avgScoreGap = scoreGaps.reduce((a, b) => a + b, 0) / scoreGaps.length;
                 const aDcd = bidderToAnalyze.dcd || sharedDetails.dcd;
 
@@ -701,8 +726,19 @@
             if (baseName && !isNaN(priceMin) && !isNaN(capacity)) {
                 const existingCount = bidders.filter(b => b.name.startsWith(baseName)).length;
                 const name = existingCount > 0 ? `${baseName} Lot ${existingCount + 1}` : baseName;
+                
+                const isChineseEnabled = dom.chineseTurbineToggle.checked;
+                const discountFactor = isChineseEnabled ? (1 - CHINESE_TURBINE_DISCOUNT) : 1;
 
-                bidders.push({ id: `bid_${Date.now()}`, name, priceMin, priceMax, capacity });
+                bidders.push({ 
+                    id: `bid_${Date.now()}`, 
+                    name, 
+                    basePriceMin: priceMin,
+                    basePriceMax: priceMax,
+                    priceMin: priceMin * discountFactor,
+                    priceMax: priceMax ? priceMax * discountFactor : null,
+                    capacity 
+                });
                 dom.otherBidderName.value = '';
                 ['competitorPriceMin', 'competitorPriceMax'].forEach(id => dom[id].value = '');
                 dom.bidderNameSelect.selectedIndex = 0;
@@ -740,6 +776,9 @@
             ];
 
             const dcdQuarters = DCD_SCORING_TABLE.map(d => d.start);
+            const isChineseEnabled = dom.chineseTurbineToggle.checked;
+            const discountFactor = isChineseEnabled ? (1 - CHINESE_TURBINE_DISCOUNT) : 1;
+
 
             simulatedBiddersList.forEach(pBid => {
                 let basePrice;
@@ -747,8 +786,8 @@
                 else if (pBid.priceTier === 'mid') basePrice = 11.10 + Math.random() * 0.5; // 11.10 - 11.60
                 else basePrice = 11.30 + Math.random() * 0.4; // 11.30 - 11.70
                 
-                const priceMin = parseFloat(basePrice.toFixed(2));
-                const priceMax = parseFloat((priceMin + 0.2 + Math.random() * 0.1).toFixed(2));
+                const basePriceMin = parseFloat(basePrice.toFixed(2));
+                const basePriceMax = parseFloat((basePriceMin + 0.2 + Math.random() * 0.1).toFixed(2));
                 
                 // Assign a random DCD, favoring earlier dates for 'top' tier
                 let dcd;
@@ -758,12 +797,13 @@
                     dcd = dcdQuarters[Math.floor(Math.random() * dcdQuarters.length)];
                 }
 
-
                 bidders.push({ 
                     ...pBid, 
                     id: `bid_${Date.now()}_${Math.random()}`,
-                    priceMin,
-                    priceMax,
+                    basePriceMin: basePriceMin,
+                    basePriceMax: basePriceMax,
+                    priceMin: basePriceMin * discountFactor,
+                    priceMax: basePriceMax * discountFactor,
                     dcd
                 });
             });
@@ -795,6 +835,25 @@
 
             dom.simulationExplainer.innerHTML = explainerHTML;
             dom.simulationExplainer.style.display = 'block';
+        };
+
+        const handleTurbineToggle = () => {
+            const isChineseEnabled = dom.chineseTurbineToggle.checked;
+            const discountFactor = isChineseEnabled ? (1 - CHINESE_TURBINE_DISCOUNT) : 1;
+
+            // Update GEAR prices
+            dom.monopileGearPrice.value = (BASE_GEAR_PRICES.Monopile * discountFactor).toFixed(2);
+            dom.jacketGearPrice.value = (BASE_GEAR_PRICES.Jacket * discountFactor).toFixed(2);
+
+            // Update existing bidder prices
+            bidders.forEach(bid => {
+                bid.priceMin = bid.basePriceMin * discountFactor;
+                if (bid.basePriceMax) {
+                    bid.priceMax = bid.basePriceMax * discountFactor;
+                }
+            });
+
+            calculateAndRender();
         };
 
         const clearBidders = () => {
@@ -869,8 +928,12 @@
             const bidderId = dom.monteCarloBidderSelect.value;
             const iterations = parseInt(dom.monteCarloIterations.value);
             const bidderToAnalyze = bidders.find(b => b.id === bidderId);
-            if (!bidderId || !bidderToAnalyze || isNaN(iterations) || iterations <= 0) { alert("Invalid analysis parameters."); return; }
+            if (!bidderId || !bidderToAnalyze || isNaN(iterations) || iterations <= 0) { 
+                dom.addBidderError.textContent = 'Please select a valid bidder and set simulations for Monte Carlo analysis.';
+                return; 
+            }
 
+            dom.addBidderError.textContent = '';
             dom.monteCarloResult.innerHTML = `<span class="text-gray-500">Running simulations...</span>`;
             dom.monteCarloDiscussion.style.display = 'block';
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -1002,6 +1065,7 @@
             dom.bidderNameSelect.addEventListener('change', handleBidderSelectChange);
             dom.exportCsvBtn.addEventListener('click', exportToCsv);
             dom.runMonteCarloBtn.addEventListener('click', runMonteCarloAnalysis);
+            dom.chineseTurbineToggle.addEventListener('change', handleTurbineToggle);
             
             // Turbine interaction
             document.addEventListener('click', triggerSpeedUp);
@@ -1023,5 +1087,4 @@
     </script>
 </body>
 </html>
-
 
