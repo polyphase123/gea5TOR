@@ -246,7 +246,7 @@
                     <div id="biddersListContainer" class="mt-4 space-y-3"></div>
                 </div>
 
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Bid Details per Bidder</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Shared Bid Details</h2>
                 
                 <div class="card space-y-6">
                     <div>
@@ -275,16 +275,16 @@
                     </div>
                     <hr>
                     <div class="tooltip-container">
-                        <label for="dcd" class="label text-lg font-semibold text-gray-700">Delivery Commencement Date (DCD)<span class="tooltip-icon">?</span></label>
+                        <label for="dcd" class="label text-lg font-semibold text-gray-700">Default Delivery Commencement Date (DCD)<span class="tooltip-icon">?</span></label>
                         <input type="date" id="dcd" class="input" value="2028-05-15">
-                        <span class="tooltip-text">The date the bidder commits to start delivering power. Earlier dates generally receive higher scores, as defined in the DCD Scoring Table.</span>
+                        <span class="tooltip-text">Used for manually added bidders. Simulated bidders have their own randomized DCDs.</span>
                     </div>
                     <hr>
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-gray-700">Grid Readiness</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="tooltip-container">
-                                <label for="gridReadinessLevel" class="label">Level of Grid Readiness<span class="tooltip-icon">?</span></label>
+                                <label for="gridReadinessLevel" class="label">Grid Readiness Level<span class="tooltip-icon">?</span></label>
                                 <select id="gridReadinessLevel" class="select">
                                     <option value="3">Level 3: With SIS + FS + Connection Agreement</option>
                                     <option value="2" selected>Level 2: With SIS + FS</option>
@@ -458,13 +458,14 @@
         const calculateScoresForBidder = (bidder, sharedDetails, maxValues) => {
              const scores = {}; let isDisqualified = false;
              const gearPrice = getGearPrices()[sharedDetails.foundationType];
-             if (bidder.price > gearPrice) { isDisqualified = true; }
-             const gearRatio = bidder.price > 0 ? gearPrice / bidder.price : 0;
+             const priceToScore = bidder.price || bidder.priceMin;
+             if (priceToScore > gearPrice) { isDisqualified = true; }
+             const gearRatio = priceToScore > 0 ? gearPrice / priceToScore : 0;
              scores.gearRatio = gearRatio;
              const normalizedRatio = maxValues.highestGearRatio > 0 ? gearRatio / maxValues.highestGearRatio : 0;
              scores.priceRaw = isDisqualified ? 0 : 50 + (normalizedRatio * 50);
              scores.priceFinal = scores.priceRaw * WEIGHTS.price;
-             const dcdDate = new Date(sharedDetails.dcd);
+             const dcdDate = new Date(bidder.dcd || sharedDetails.dcd);
              const dcdEntry = DCD_SCORING_TABLE.find(e => dcdDate >= new Date(e.start) && dcdDate <= new Date(e.end));
              scores.dcdRaw = dcdEntry ? dcdEntry.score : 0;
              if (!dcdEntry) isDisqualified = true;
@@ -490,7 +491,8 @@
             let highestGearRatio = 0; let maxOfferedCapacity = 0;
             const gearPrice = getGearPrices()[sharedDetails.foundationType];
             currentBidders.forEach(bid => {
-                if (bid.price <= gearPrice && bid.price > 0) { highestGearRatio = Math.max(highestGearRatio, gearPrice / bid.price); }
+                const price = bid.price || bid.priceMin;
+                if (price <= gearPrice && price > 0) { highestGearRatio = Math.max(highestGearRatio, gearPrice / price); }
                 maxOfferedCapacity = Math.max(maxOfferedCapacity, bid.capacity);
             });
             const scoredBidders = currentBidders.map(bid => ({ ...bid, ...calculateScoresForBidder(bid, sharedDetails, { highestGearRatio, maxOfferedCapacity }) }));
@@ -523,8 +525,13 @@
 
         const calculateAndRender = () => {
             validateInputs();
-            const sharedDetails = { foundationType: dom.foundationType.value, dcd: dom.dcd.value, gridReadinessLevel: dom.gridReadinessLevel.value, gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value };
-            const { rankedBidders, highestGearRatio } = runFullAuction(bidders.map(b => ({...b, price: b.priceMin})), sharedDetails);
+            const sharedDetails = { 
+                foundationType: dom.foundationType.value, 
+                dcd: dom.dcd.value, // This is the default for manual bids
+                gridReadinessLevel: dom.gridReadinessLevel.value, 
+                gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value 
+            };
+            const { rankedBidders, highestGearRatio } = runFullAuction(bidders, sharedDetails);
             rankedBiddersCache = rankedBidders;
             updateUI(rankedBidders, highestGearRatio);
         };
@@ -545,19 +552,21 @@
 
         // --- HTML GENERATORS ---
         const generateBidderHTML = (bidder, index) => {
-             const isFirstBidder = bidders[0] && bidder.id === bidders[0].id;
+             const isFirstBidder = rankedBiddersCache[0] && bidder.id === rankedBiddersCache[0].id;
              const bgColor = bidder.isDisqualified ? 'bg-red-50' : (isFirstBidder ? 'bg-blue-50' : 'bg-gray-50');
              
              let priceText = `₱${bidder.priceMin.toFixed(2)}`;
              if (bidder.priceMax) {
                 priceText = `₱${bidder.priceMin.toFixed(2)} - ₱${bidder.priceMax.toFixed(2)}`;
              }
+             const dcdText = bidder.dcd ? new Date(bidder.dcd + 'T00:00:00').toLocaleDateString() : 'Default';
 
              return `<div class="border rounded-lg p-3 ${bgColor}">
-                    <div class="grid grid-cols-6 gap-2 items-center text-sm">
+                    <div class="grid grid-cols-7 gap-2 items-center text-sm">
                         <div class="col-span-2 font-semibold text-gray-800">${index + 1}. ${bidder.name}</div>
                         <div class="text-center text-xs"><span class="block text-gray-500">Price Range</span> ${priceText}</div>
                         <div class="text-center"><span class="block text-xs text-gray-500">Capacity</span> ${bidder.capacity} MW</div>
+                        <div class="text-center text-xs"><span class="block text-gray-500">DCD</span> ${dcdText}</div>
                         <div class="text-center font-bold text-blue-600"><span class="block text-xs text-gray-500 font-medium">Score</span> ${bidder.total.toFixed(2)}</div>
                         <div class="text-right"><button onclick="toggleDetails('${bidder.id}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-2 rounded">Details</button> <button onclick="removeBidder('${bidder.id}')" class="text-xs bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">&times;</button></div>
                     </div>
@@ -597,9 +606,12 @@
             if (probability < 99 && requiredPriceDrops.length > 0) {
                 const avgPriceDrop = requiredPriceDrops.reduce((a, b) => a + b, 0) / requiredPriceDrops.length;
                 const avgScoreGap = scoreGaps.reduce((a, b) => a + b, 0) / scoreGaps.length;
+                
+                const bidderToAnalyze = bidders.find(b => b.name === bidderName);
+                const aDcd = bidderToAnalyze.dcd || sharedDetails.dcd;
 
                 // DCD Suggestion
-                const currentDcdScore = DCD_SCORING_TABLE.find(e => new Date(sharedDetails.dcd) >= new Date(e.start + 'T00:00:00') && new Date(sharedDetails.dcd) <= new Date(e.end + 'T00:00:00'))?.score || 0;
+                const currentDcdScore = DCD_SCORING_TABLE.find(e => new Date(aDcd) >= new Date(e.start + 'T00:00:00') && new Date(aDcd) <= new Date(e.end + 'T00:00:00'))?.score || 0;
                 const requiredDcdScoreImprovement = avgScoreGap / WEIGHTS.dcd;
                 const targetDcdScore = currentDcdScore + requiredDcdScoreImprovement;
                 const betterDcdEntry = DCD_SCORING_TABLE.find(e => e.score >= targetDcdScore);
@@ -611,7 +623,7 @@
                 if (currentGridLevel < 3) {
                     const currentGridBaseScore = GRID_SCORE_TABLE[currentGridLevel] || 0;
                     const gridDate = new Date(sharedDetails.gridFacilityReadinessDate);
-                    const dcdDate = new Date(sharedDetails.dcd);
+                    const dcdDate = new Date(aDcd);
                     const advanceDays = Math.max(0, (gridDate - dcdDate) / (1000 * 60 * 60 * 24) * -1);
                     const penaltyEntry = PENALTY_TABLE.find(p => advanceDays >= p.days);
                     const penaltyPercent = penaltyEntry ? penaltyEntry.penalty : 0;
@@ -709,35 +721,75 @@
         const simulateBids = () => {
              bidders = []; // Clear existing bidders
             const simulatedBiddersList = [
-                { name: 'CIP & ACEN Corporation', capacity: 1000 },
-                { name: 'San Miguel Corporation', capacity: 800 },
-                { name: 'Corio Generation', capacity: 600 },
-                { name: 'Triconti Windkraft Group', capacity: 450 },
-                { name: 'Aboitiz Power Corp.', capacity: 500 },
-                { name: 'The Lopez Group (First Gen)', capacity: 400 },
-                { name: 'CleanTech & The Blue Circle', capacity: 1200 },
-                { name: 'BlueFloat Energy', capacity: 750 },
-                { name: 'BuhaWind Consortium', capacity: 700 }
+                { name: 'CIP & ACEN Corporation', capacity: 1000, priceTier: 'top' },
+                { name: 'San Miguel Corporation', capacity: 800, priceTier: 'top' },
+                { name: 'Corio Generation', capacity: 600, priceTier: 'mid' },
+                { name: 'Triconti Windkraft Group', capacity: 450, priceTier: 'mid' },
+                { name: 'Aboitiz Power Corp.', capacity: 500, priceTier: 'mid' },
+                { name: 'The Lopez Group (First Gen)', capacity: 400, priceTier: 'high' },
+                { name: 'CleanTech & The Blue Circle', capacity: 1200, priceTier: 'mid' },
+                { name: 'BlueFloat Energy', capacity: 750, priceTier: 'high' },
+                { name: 'BuhaWind Consortium', capacity: 700, priceTier: 'high' }
             ];
 
+            const dcdQuarters = DCD_SCORING_TABLE.map(d => d.start);
+
             simulatedBiddersList.forEach(pBid => {
-                const priceMin = parseFloat((10.90 + Math.random() * 0.8).toFixed(2));
-                const priceMax = parseFloat((priceMin + 0.2 + Math.random() * 0.3).toFixed(2)); // Max is 0.2 to 0.5 higher
+                let basePrice;
+                if (pBid.priceTier === 'top') basePrice = 10.90 + Math.random() * 0.4; // 10.90 - 11.30
+                else if (pBid.priceTier === 'mid') basePrice = 11.10 + Math.random() * 0.5; // 11.10 - 11.60
+                else basePrice = 11.30 + Math.random() * 0.4; // 11.30 - 11.70
+                
+                const priceMin = parseFloat(basePrice.toFixed(2));
+                const priceMax = parseFloat((priceMin + 0.2 + Math.random() * 0.1).toFixed(2));
+                
+                // Assign a random DCD, favoring earlier dates for 'top' tier
+                let dcd;
+                if(pBid.priceTier === 'top' && Math.random() < 0.6) { // 60% chance of being in the first half of 2028
+                    dcd = dcdQuarters[Math.floor(Math.random() * 2)];
+                } else {
+                    dcd = dcdQuarters[Math.floor(Math.random() * dcdQuarters.length)];
+                }
+
 
                 bidders.push({ 
                     ...pBid, 
                     id: `bid_${Date.now()}_${Math.random()}`,
                     priceMin,
-                    priceMax
+                    priceMax,
+                    dcd
                 });
             });
             
-            dom.simulationExplainer.innerHTML = `<strong>Note on Simulated Ranking:</strong> The ranking changes with each click because bidder prices are randomized. The final score is heavily weighted on <strong>Price (70%)</strong>, so a bidder with a large capacity like <strong>CleanTech & The Blue Circle (1200 MW)</strong> can rank first if they are simulated with a highly competitive (low) price. This shows how different pricing strategies create dynamic auction outcomes.`;
-            dom.simulationExplainer.style.display = 'block';
-
             calculateAndRender();
+            updateSimulationExplainer(rankedBiddersCache);
         };
         
+        const updateSimulationExplainer = (rankedBidders) => {
+            if (!rankedBidders || rankedBidders.length === 0) {
+                dom.simulationExplainer.style.display = 'none';
+                return;
+            }
+
+            const topBidder = rankedBidders[0];
+            const marginalBidder = rankedBidders.find(b => b.awardStatus === 'Marginal');
+            
+            let explainerHTML = `<h4 class="font-semibold text-gray-800 mb-2">Simulated Auction Analysis</h4>`;
+            explainerHTML += `<p class="mb-2">This is one of many possible outcomes. Ranking is dynamic because each simulation randomizes both <strong>Price</strong> and <strong>Delivery Commencement Date (DCD)</strong> for each bidder.</p>`;
+
+            const topBidderDCD = new Date(topBidder.dcd + 'T00:00:00').toLocaleDateString();
+            explainerHTML += `<p class="mb-2">In this scenario, <strong>${topBidder.name}</strong> ranked #1. Their success is a combination of a competitive price (<strong>₱${topBidder.priceMin.toFixed(2)}</strong>) and a favorable DCD (<strong>${topBidderDCD}</strong>), resulting in a high total score.</p>`;
+
+            if (marginalBidder) {
+                explainerHTML += `<p>The crucial 'marginal' spot was won by <strong>${marginalBidder.name}</strong>. Their total score of <strong>${marginalBidder.total.toFixed(2)}</strong> was just enough to be the last bidder awarded capacity, securing the final <strong>${marginalBidder.awardedMW} MW</strong> available.</p>`;
+            } else {
+                 explainerHTML += `<p>In this round, the winning bids perfectly matched the auction's capacity target, so no single 'marginal' bidder was declared.</p>`;
+            }
+
+            dom.simulationExplainer.innerHTML = explainerHTML;
+            dom.simulationExplainer.style.display = 'block';
+        };
+
         const clearBidders = () => {
             bidders = [];
             dom.simulationExplainer.style.display = 'none';
@@ -750,6 +802,9 @@
                 dom.simulationExplainer.style.display = 'none';
             }
             calculateAndRender(); 
+            if(dom.simulationExplainer.style.display === 'block'){
+                updateSimulationExplainer(rankedBiddersCache);
+            }
         };
         window.toggleDetails = (id) => { 
             const detailsEl = document.getElementById(`details-${id}`);
@@ -767,12 +822,12 @@
                 "Rank", "Bidder", "Award Status", "Awarded MW", "Total Score",
                 "Price (Final)", "DCD (Final)", "Grid (Final)", "Capacity (Final)",
                 "Price (Raw)", "DCD (Raw)", "Grid (Raw)", "Capacity (Raw)",
-                "Bid Price (Min)", "Bid Capacity (MW)"
+                "Bid Price (Min)", "Simulated DCD", "Bid Capacity (MW)"
             ];
 
             const rows = rankedBiddersCache.map((bid, index) => [
                 index + 1,
-                `"${bid.name}"`, // Wrap in quotes to handle potential commas
+                `"${bid.name}"`,
                 bid.awardStatus,
                 bid.awardedMW,
                 bid.total.toFixed(4),
@@ -785,6 +840,7 @@
                 bid.gridRaw.toFixed(4),
                 bid.capacityRaw.toFixed(4),
                 bid.priceMin.toFixed(2),
+                bid.dcd || "N/A",
                 bid.capacity
             ]);
 
@@ -813,7 +869,12 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             let winCount = 0;
-            const sharedDetails = { foundationType: dom.foundationType.value, dcd: dom.dcd.value, gridReadinessLevel: dom.gridReadinessLevel.value, gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value };
+            const sharedDetails = { 
+                foundationType: dom.foundationType.value, 
+                dcd: dom.dcd.value, 
+                gridReadinessLevel: dom.gridReadinessLevel.value, 
+                gridFacilityReadinessDate: dom.gridFacilityReadinessDate.value 
+            };
             
             let requiredPriceDrops = [];
             let scoreGaps = [];
@@ -821,15 +882,12 @@
             for (let i = 0; i < iterations; i++) {
                 const simBidders = JSON.parse(JSON.stringify(bidders));
                 simBidders.forEach(bid => {
+                    bid.price = bid.priceMin; // Use the base price for all
                     if (bid.id !== bidderId) {
                         if (bid.priceMax && bid.priceMax > bid.priceMin) {
-                           // Uniform distribution
+                           // Randomize competitor prices
                             bid.price = Math.random() * (bid.priceMax - bid.priceMin) + bid.priceMin;
-                        } else {
-                            bid.price = bid.priceMin;
                         }
-                    } else {
-                        bid.price = bid.priceMin; // Analyze target bidder at their min price
                     }
                 });
 
@@ -868,7 +926,7 @@
             dom.monteCarloResult.innerHTML = `Win Probability: <span class="text-teal-600">${winProbability.toFixed(2)}%</span>`;
             
             dom.monteCarloDiscussion.innerHTML = generateMonteCarloDiscussion(
-                bidderToAnalyze.name, winProbability, requiredPriceDrops, scoreGaps, sharedDetails
+                bidderToAnalyze.name, probability, requiredPriceDrops, scoreGaps, sharedDetails
             );
         };
 
