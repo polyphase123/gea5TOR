@@ -374,6 +374,7 @@
                             <tbody id="rankingTableBody"></tbody>
                         </table>
                         <button id="exportCsvBtn" class="mt-4 w-full bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800">Export to CSV</button>
+                        <div id="job-estimation-results"></div>
                     </div>
                 </div>
             </div>
@@ -472,6 +473,7 @@
             penaltyTableBody: document.getElementById('penaltyTableBody'), dcdScoringTableBody: document.getElementById('dcdScoringTableBody'),
             gridLegendCard: document.getElementById('gridLegendCard'),
             chineseTurbineToggle: document.getElementById('chineseTurbineToggle'),
+            jobEstimationResults: document.getElementById('job-estimation-results'),
         };
         
         // --- CORE LOGIC ---
@@ -516,7 +518,7 @@
             let highestGearRatio = 0; let maxOfferedCapacity = 0;
             const gearPrice = getGearPrices()[sharedDetails.foundationType];
             currentBidders.forEach(bid => {
-                const price = bid.price || bid.priceMin;
+                const price = bid.priceMin;
                 if (price <= gearPrice && price > 0) { highestGearRatio = Math.max(highestGearRatio, gearPrice / price); }
                 maxOfferedCapacity = Math.max(maxOfferedCapacity, bid.capacity);
             });
@@ -559,6 +561,7 @@
             const { rankedBidders, highestGearRatio } = runFullAuction(bidders, sharedDetails);
             rankedBiddersCache = rankedBidders;
             updateUI(rankedBidders, highestGearRatio);
+            updateJobEstimation(rankedBidders);
         };
         
         // --- UI UPDATE ---
@@ -573,6 +576,35 @@
             }
             dom.rankingTableBody.innerHTML = rankingHTML;
             updateAnalysisBidderSelect();
+        };
+
+        const updateJobEstimation = (rankedBidders) => {
+            const totalAwardedMW = rankedBidders
+                .filter(b => b.awardStatus === 'Winner' || b.awardStatus === 'Marginal')
+                .reduce((total, bidder) => total + bidder.awardedMW, 0);
+
+            const estimatedJobs = Math.round(totalAwardedMW * 3);
+
+            if (totalAwardedMW > 0) {
+                dom.jobEstimationResults.innerHTML = `
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <h4 class="text-lg font-semibold text-center text-gray-700 mb-2">Socio-Economic Impact</h4>
+                        <div class="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <p class="text-sm text-gray-600">Total Awarded Capacity:</p>
+                            <p class="text-2xl font-bold text-green-700">${totalAwardedMW.toLocaleString()} MW</p>
+                            <p class="text-sm text-gray-600 mt-2">Estimated Jobs Generated:</p>
+                            <p class="text-2xl font-bold text-green-700">${estimatedJobs.toLocaleString()}</p>
+                            <div class="text-xs text-gray-500 mt-2 tooltip-container inline-block">
+                                (Based on an estimate of ~3 jobs/MW)
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text" style="width: 280px; bottom: 120%;">This is a high-level estimate combining construction, manufacturing, and long-term operations jobs over the project's lifecycle. Actual figures can vary based on local content policies and supply chain development.</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                dom.jobEstimationResults.innerHTML = ''; // Clear it if no one won
+            }
         };
 
         // --- HTML GENERATORS ---
