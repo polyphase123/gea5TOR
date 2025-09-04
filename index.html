@@ -324,7 +324,14 @@
                     </div>
                 </div>
                 
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Strategic Tools</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Advanced Strategic Analysis</h2>
+                
+                <div class="card">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-600">Markov Chain Bidding Simulation</h3>
+                    <p class="text-sm text-gray-600 mb-4">This simulates how bidding strategies might evolve. Each step represents a new auction round where bidders change their strategy (aggressive, moderate, conservative) based on their previous state, creating a more realistic, evolving competitive landscape.</p>
+                    <button id="runMarkovBtn" class="mt-4 w-full bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cyan-700">Simulate Next Bidding Round</button>
+                </div>
+                
                 <div class="card">
                     <h3 class="text-xl font-semibold mb-4 text-blue-600">Probabilistic Analysis (Monte Carlo)</h3>
                     <p class="text-sm text-gray-600 mb-4">Simulates the auction thousands of times with random competitor prices (within their specified ranges) to calculate your probability of winning.</p>
@@ -344,7 +351,6 @@
                     <div id="monteCarloDiscussion" class="mt-4 text-sm text-gray-600 p-3 bg-gray-50 rounded-lg" style="display: none;"></div>
                 </div>
 
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Advanced Strategic Analysis</h2>
                 <div class="card">
                     <h3 class="text-xl font-semibold mb-4 text-blue-600">Score Contribution Analysis</h3>
                     <p class="text-sm text-gray-600 mb-4">Visually compare the strengths and weaknesses of each bidder by seeing how their final score is composed across the four main criteria.</p>
@@ -476,6 +482,11 @@
         ];
         const BASE_GEAR_PRICES = { Monopile: 12.00, Jacket: 12.10 };
         const CHINESE_TURBINE_DISCOUNT = 0.325; // 32.5%
+        const MARKOV_TRANSITIONS = {
+            Aggressive: { Aggressive: 0.7, Moderate: 0.2, Conservative: 0.1 },
+            Moderate: { Aggressive: 0.2, Moderate: 0.6, Conservative: 0.2 },
+            Conservative: { Aggressive: 0.1, Moderate: 0.3, Conservative: 0.6 },
+        };
 
         // --- GLOBAL STATE ---
         let bidders = [];
@@ -510,6 +521,7 @@
             sensitivityBidderSelect: document.getElementById('sensitivityBidderSelect'),
             sensitivityVariableSelect: document.getElementById('sensitivityVariableSelect'),
             runSensitivityBtn: document.getElementById('runSensitivityBtn'),
+            runMarkovBtn: document.getElementById('runMarkovBtn'),
         };
         
         // --- CORE LOGIC ---
@@ -1291,6 +1303,62 @@
                 }
             });
         };
+        
+        const runMarkovStep = () => {
+            if (bidders.length === 0) {
+                alert("Please load or add bidders before running the Markov simulation.");
+                return;
+            }
+
+            const getNextState = (currentState) => {
+                const transitions = MARKOV_TRANSITIONS[currentState];
+                let rand = Math.random();
+                let cumulative = 0;
+                for (const state in transitions) {
+                    cumulative += transitions[state];
+                    if (rand < cumulative) {
+                        return state;
+                    }
+                }
+                return currentState; // Fallback
+            };
+
+            bidders.forEach(bid => {
+                // Initialize state if it doesn't exist
+                if (!bid.markovState) {
+                    const states = ['Aggressive', 'Moderate', 'Conservative'];
+                    bid.markovState = states[Math.floor(Math.random() * states.length)];
+                }
+
+                // Transition to the next state
+                bid.markovState = getNextState(bid.markovState);
+
+                // Update prices based on the new state
+                const isChineseEnabled = dom.chineseTurbineToggle.checked;
+                const discountFactor = isChineseEnabled ? (1 - CHINESE_TURBINE_DISCOUNT) : 1;
+                const priceRange = (bid.basePriceMax || bid.basePriceMin) - bid.basePriceMin;
+                let newPrice;
+
+                switch (bid.markovState) {
+                    case 'Aggressive':
+                        newPrice = bid.basePriceMin + Math.random() * (priceRange * 0.33);
+                        break;
+                    case 'Moderate':
+                        newPrice = bid.basePriceMin + (priceRange * 0.33) + Math.random() * (priceRange * 0.34);
+                        break;
+                    case 'Conservative':
+                        newPrice = bid.basePriceMin + (priceRange * 0.67) + Math.random() * (priceRange * 0.33);
+                        break;
+                }
+                bid.priceMin = newPrice * discountFactor;
+                bid.priceMax = (newPrice + 0.2 + Math.random() * 0.1) * discountFactor;
+                
+            });
+
+            calculateAndRender();
+            updateSimulationExplainer(rankedBiddersCache);
+
+        };
 
 
         // --- INIT ---
@@ -1311,6 +1379,7 @@
             dom.runMonteCarloBtn.addEventListener('click', runMonteCarloAnalysis);
             dom.runSensitivityBtn.addEventListener('click', runSensitivityAnalysis);
             dom.chineseTurbineToggle.addEventListener('change', handleTurbineToggle);
+            dom.runMarkovBtn.addEventListener('click', runMarkovStep);
             
             // Turbine interaction
             document.addEventListener('click', triggerSpeedUp);
