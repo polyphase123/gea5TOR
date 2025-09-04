@@ -133,7 +133,7 @@
                             <span class="font-semibold">Total Installation Target:</span> 3,300 MW
                         </p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div class="md:col-span-2">
                              <label for="bidderNameSelect" class="label text-sm">Bidder Name</label>
                              <select id="bidderNameSelect" class="input"></select>
@@ -143,11 +143,6 @@
                             <label for="competitorPriceMin" class="label text-sm">Min Price<span class="tooltip-icon">?</span></label>
                             <input type="number" id="competitorPriceMin" class="input" value="11.50" step="0.01">
                             <span class="tooltip-text">The lowest or most likely price this bidder is expected to offer. Used for ranking and as the minimum for simulations.</span>
-                        </div>
-                         <div class="tooltip-container">
-                            <label for="competitorPriceMostLikely" class="label text-sm">Likely Price<span class="tooltip-icon">?</span></label>
-                            <input type="number" id="competitorPriceMostLikely" class="input" placeholder="Optional" step="0.01">
-                            <span class="tooltip-text">Optional. The most likely price for a bidder. Enables a more realistic 'Triangular' distribution in Monte Carlo analysis.</span>
                         </div>
                          <div class="tooltip-container">
                             <label for="competitorPriceMax" class="label text-sm">Max Price<span class="tooltip-icon">?</span></label>
@@ -352,7 +347,6 @@
         const dom = {
             bidderNameSelect: document.getElementById('bidderNameSelect'), otherBidderName: document.getElementById('otherBidderName'),
             competitorPriceMin: document.getElementById('competitorPriceMin'), competitorPriceMax: document.getElementById('competitorPriceMax'),
-            competitorPriceMostLikely: document.getElementById('competitorPriceMostLikely'),
             competitorCapacity: document.getElementById('competitorCapacity'), addBidderBtn: document.getElementById('addBidderBtn'),
             simulateBidsBtn: document.getElementById('simulateBidsBtn'),
             clearBidsBtn: document.getElementById('clearBidsBtn'),
@@ -472,9 +466,7 @@
              const bgColor = bidder.isDisqualified ? 'bg-red-50' : (isFirstBidder ? 'bg-blue-50' : 'bg-gray-50');
              
              let priceText = `₱${bidder.priceMin.toFixed(2)}`;
-             if(bidder.priceMostLikely && bidder.priceMax) {
-                priceText = `₱${bidder.priceMin.toFixed(2)} - <strong>${bidder.priceMostLikely.toFixed(2)}</strong> - ${bidder.priceMax.toFixed(2)}`
-             } else if (bidder.priceMax) {
+             if (bidder.priceMax) {
                 priceText = `₱${bidder.priceMin.toFixed(2)} - ₱${bidder.priceMax.toFixed(2)}`;
              }
 
@@ -588,19 +580,17 @@
         // --- EVENT HANDLERS & FEATURES ---
         const addBidder = () => {
             dom.addBidderError.textContent = '';
-            ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].classList.remove('border-red-500'));
+            ['competitorPriceMin', 'competitorPriceMax'].forEach(id => dom[id].classList.remove('border-red-500'));
 
             const selectedName = dom.bidderNameSelect.value;
             const baseName = selectedName === 'other' ? dom.otherBidderName.value.trim() : selectedName;
             const priceMin = parseFloat(dom.competitorPriceMin.value);
-            const priceMostLikely = dom.competitorPriceMostLikely.value ? parseFloat(dom.competitorPriceMostLikely.value) : null;
             const priceMax = dom.competitorPriceMax.value ? parseFloat(dom.competitorPriceMax.value) : null;
             const capacity = parseInt(dom.competitorCapacity.value);
             
-            if ((priceMax !== null && priceMax < priceMin) || (priceMostLikely !== null && (priceMostLikely < priceMin || priceMostLikely > priceMax))) {
-                dom.addBidderError.textContent = 'Price range is invalid. Ensure Min <= Likely <= Max.';
+            if (priceMax !== null && priceMax < priceMin) {
+                dom.addBidderError.textContent = 'Max price cannot be lower than Min price.';
                 dom.competitorPriceMin.classList.add('border-red-500');
-                dom.competitorPriceMostLikely.classList.add('border-red-500');
                 dom.competitorPriceMax.classList.add('border-red-500');
                 return;
             }
@@ -609,9 +599,9 @@
                 const existingCount = bidders.filter(b => b.name.startsWith(baseName)).length;
                 const name = existingCount > 0 ? `${baseName} Lot ${existingCount + 1}` : baseName;
 
-                bidders.push({ id: `bid_${Date.now()}`, name, priceMin, priceMostLikely, priceMax, capacity });
+                bidders.push({ id: `bid_${Date.now()}`, name, priceMin, priceMax, capacity });
                 dom.otherBidderName.value = '';
-                ['competitorPriceMin', 'competitorPriceMostLikely', 'competitorPriceMax'].forEach(id => dom[id].value = '');
+                ['competitorPriceMin', 'competitorPriceMax'].forEach(id => dom[id].value = '');
                 dom.bidderNameSelect.selectedIndex = 0;
                 handleBidderSelectChange();
                 calculateAndRender();
@@ -646,16 +636,13 @@
             ];
 
             simulatedBiddersList.forEach(pBid => {
-                const basePrice = 10.90 + Math.random() * 0.8; // Random base between 10.90 and 11.70
-                const priceMostLikely = parseFloat(basePrice.toFixed(2));
-                const priceMin = parseFloat((priceMostLikely - (0.1 + Math.random() * 0.15)).toFixed(2));
-                const priceMax = parseFloat((priceMostLikely + (0.1 + Math.random() * 0.15)).toFixed(2));
+                const priceMin = parseFloat((10.90 + Math.random() * 0.8).toFixed(2));
+                const priceMax = parseFloat((priceMin + 0.2 + Math.random() * 0.3).toFixed(2)); // Max is 0.2 to 0.5 higher
 
                 bidders.push({ 
                     ...pBid, 
                     id: `bid_${Date.now()}_${Math.random()}`,
                     priceMin,
-                    priceMostLikely,
                     priceMax
                 });
             });
@@ -720,16 +707,6 @@
         };
         
         // --- Monte Carlo Analysis ---
-        function getTriangularRandom(min, max, mode) {
-            const F = (mode - min) / (max - min);
-            const rand = Math.random();
-            if (rand < F) {
-                return min + Math.sqrt(rand * (max - min) * (mode - min));
-            } else {
-                return max - Math.sqrt((1 - rand) * (max - min) * (max - mode));
-            }
-        }
-
         const runMonteCarloAnalysis = async () => {
             const bidderId = dom.monteCarloBidderSelect.value;
             const iterations = parseInt(dom.monteCarloIterations.value);
@@ -750,10 +727,7 @@
                 const simBidders = JSON.parse(JSON.stringify(bidders));
                 simBidders.forEach(bid => {
                     if (bid.id !== bidderId) {
-                        if (bid.priceMostLikely && bid.priceMax && bid.priceMax > bid.priceMin) {
-                            // Triangular distribution
-                             bid.price = getTriangularRandom(bid.priceMin, bid.priceMax, bid.priceMostLikely);
-                        } else if (bid.priceMax && bid.priceMax > bid.priceMin) {
+                        if (bid.priceMax && bid.priceMax > bid.priceMin) {
                            // Uniform distribution
                             bid.price = Math.random() * (bid.priceMax - bid.priceMin) + bid.priceMin;
                         } else {
